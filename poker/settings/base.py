@@ -18,10 +18,10 @@ class BaseSettings(Settings):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'rest_framework',
-        'apps.User',
+        'apps.user',
     ]
 
-    AUTH_USER_MODEL = 'User.User'
+    AUTH_USER_MODEL = 'user.User'
 
     AUTH_GROUP = None
 
@@ -52,6 +52,12 @@ class BaseSettings(Settings):
             },
         },
     ]
+
+    REST_FRAMEWORK = {
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+        ],
+    }
 
     WSGI_APPLICATION = 'poker.wsgi.application'
 
