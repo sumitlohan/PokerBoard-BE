@@ -93,3 +93,4 @@ class User(AbstractBaseUser, CustomBase):
     def is_admin(self):
         "Is the user a admin member?"
         return self.admin
+        
