@@ -3,9 +3,19 @@ import os
 import sys
 import class_settings
 
+def set_settings():
+    """
+    Set local/production settings according to usage
+    """
+    if(os.path.exists("poker/settings/local.py")):
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.local")
+        os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'LocalSettings')
+    else:
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.production")
+        os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'ProductionSettings')
+
 if __name__ == "__main__":
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.local")
-    os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'LocalSettings')
+    set_settings()
     class_settings.setup()
     try:
         from django.core.management import execute_from_command_line
