@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from class_settings import Settings
 
 class BaseSettings(Settings):
@@ -18,8 +19,10 @@ class BaseSettings(Settings):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'rest_framework',
+        'rest_framework_simplejwt',
         'apps.user',
-        'corsheaders'
+        'apps.group',
+        'corsheaders',
     ]
 
     AUTH_USER_MODEL = 'user.User'
@@ -61,6 +64,10 @@ class BaseSettings(Settings):
         'DEFAULT_AUTHENTICATION_CLASSES': [
             'rest_framework_simplejwt.authentication.JWTAuthentication',
         ],
+    }
+
+    SIMPLE_JWT = {
+        'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     }
 
     WSGI_APPLICATION = 'poker.wsgi.application'
