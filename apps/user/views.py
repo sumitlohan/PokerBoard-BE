@@ -1,11 +1,11 @@
 from rest_framework import generics
 from rest_framework.response import Response
-from .serializer import RegisterSerializer, UserSerializer
+from .serializer import UserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 #Register API
 class RegisterApi(generics.GenericAPIView):
-    serializer_class = RegisterSerializer
+    serializer_class = UserSerializer
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
