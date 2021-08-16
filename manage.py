@@ -9,10 +9,9 @@ def set_settings():
     """
     if(os.path.exists("poker/settings/local.py")):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.local")
-        os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'LocalSettings')
     else:
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.production")
-        os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'ProductionSettings')
+    os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'Setting')
 
 if __name__ == "__main__":
     set_settings()

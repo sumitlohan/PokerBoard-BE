@@ -1,6 +1,6 @@
-from poker.settings.base import BaseSettings
+from poker.settings.base import Setting
 
-class LocalSettings(BaseSettings):
+class Setting(Setting):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
