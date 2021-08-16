@@ -1,7 +1,9 @@
+from django.dispatch import receiver
 from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser
+from .tasks import send_email_task
 
 class CustomBase(models.Model):
     is_active = models.BooleanField(default=True)
@@ -93,4 +95,8 @@ class User(AbstractBaseUser, CustomBase):
     def is_admin(self):
         "Is the user a admin member?"
         return self.admin
-        
+
+@receiver(models.signals.post_save, sender=User)
+def handler(sender, instance, created, **kwargs):
+    if created:
+        send_email_task.delay(instance.email, instance.first_name)
