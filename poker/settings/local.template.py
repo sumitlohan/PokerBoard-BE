@@ -1,4 +1,4 @@
-from .base import BaseSettings
+from poker.settings.base import BaseSettings
 
 class LocalSettings(BaseSettings):
     DATABASES = {
