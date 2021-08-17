@@ -11,7 +11,7 @@ def set_settings():
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.local")
     else:
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.production")
-    os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'LocalSetting')
+    os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'Setting')
 
 if __name__ == "__main__":
     set_settings()

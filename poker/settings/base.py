@@ -70,6 +70,13 @@ class Setting(Settings):
         },
     ]
 
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'mydatabase',
+        }
+    }
+
 
     LANGUAGE_CODE = 'en-us'
 
