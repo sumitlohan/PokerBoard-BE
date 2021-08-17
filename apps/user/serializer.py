@@ -1,12 +1,22 @@
 from rest_framework import  serializers
-from .models import User
+from rest_framework.authtoken.models import Token
 
-# Register serializer
-class RegisterSerializer(serializers.ModelSerializer):
+from apps.user.models import User
+
+
+class UserSerializer(serializers.ModelSerializer):
+    token = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ('email', 'password', 'first_name', 'last_name')
-        
+        fields = ['first_name','last_name','email','password','token']
+        extra_kwargs = {
+            'password': {'write_only': True},
+        }
+
+    def get_token(self, user):
+        return Token.objects.get_or_create(user = user)[0].key
+
     def create(self, validated_data):
         user = User(
             first_name = validated_data['first_name'],
@@ -16,14 +26,3 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
-
-# User serializer
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['first_name','last_name','email','password']
-        extra_kwargs = {
-            'password': {'write_only': True},
-        }
-
-        
