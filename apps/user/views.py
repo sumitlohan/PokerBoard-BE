@@ -1,7 +1,8 @@
 from rest_framework import generics
 from rest_framework.response import Response
-from .serializer import UserSerializer
+from .serializer import UserSerializer, LoginSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 #Register API
 class RegisterApi(generics.GenericAPIView):
@@ -24,4 +25,8 @@ def get_tokens_for_user(user):
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     }
-    
+
+
+# Login API  
+class LoginApi(TokenObtainPairView):
+    serializer_class = LoginSerializer
