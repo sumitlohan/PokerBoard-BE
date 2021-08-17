@@ -7,6 +7,10 @@ from apps.group.permissions import IsGroupAdminPermission
 from apps.group.models import Group
 
 class GroupApi(generics.GenericAPIView):
+    """
+    Group API for creating group and get list of groups
+    a user is associated with.
+    """
     serializer_class = GroupSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -20,6 +24,7 @@ class GroupApi(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
     def get(self, request):
         groups = list(map(lambda x: x.group ,request.user.groups.all()))
         serializer = self.get_serializer(groups, many=True)
@@ -27,6 +32,9 @@ class GroupApi(generics.GenericAPIView):
 
 
 class GroupUserApi(generics.GenericAPIView):
+    """
+    Group user API for adding group member
+    """
     serializer_class = GroupUserSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsGroupAdminPermission]
@@ -40,3 +48,4 @@ class GroupUserApi(generics.GenericAPIView):
 
         serializer.save()
         return Response(serializer.data)
+

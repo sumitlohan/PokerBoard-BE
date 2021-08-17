@@ -10,3 +10,4 @@ class IsGroupAdminPermission(permissions.BasePermission):
 
     def has_object_permission(self, request, view, group):
         return request.user == group.created_by
+

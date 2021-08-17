@@ -5,7 +5,7 @@ from apps.user.models import CustomBase, User
 
 class Group(CustomBase):
     """
-    
+    Group model
     """
     name = models.CharField(max_length=50, help_text="group name")
     created_by = models.ForeignKey(User, related_name="groups_created", on_delete=models.CASCADE)
@@ -13,7 +13,7 @@ class Group(CustomBase):
 
 class GroupUser(CustomBase):
     """
-    
+    GroupUser model for storing membership details
     """
     class Meta:
         unique_together = (('user', 'group'))
@@ -25,3 +25,4 @@ class GroupUser(CustomBase):
 def handler(sender, instance, created, **kwargs):
     if created:
         GroupUser.objects.create(user=instance.created_by, group = instance)
+
