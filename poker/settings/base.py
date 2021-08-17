@@ -6,7 +6,7 @@ class Setting(Settings):
 
     SECRET_KEY = 'bf#3+((2_t_-h0nt4k#)5md1rl%8p$o^*!k0+1v_^rb*j36(6g'
 
-    DEBUG = True
+    DEBUG = False
 
     ALLOWED_HOSTS = []
 
@@ -20,9 +20,12 @@ class Setting(Settings):
         'rest_framework',
         'rest_framework.authtoken',
         'apps.user',
+        'corsheaders'
     ]
 
     AUTH_USER_MODEL = 'user.User'
+
+    CORS_ORIGIN_ALLOW_ALL = True
 
     AUTH_GROUP = None
 
@@ -34,6 +37,7 @@ class Setting(Settings):
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        'corsheaders.middleware.CorsMiddleware',
     ]
 
     ROOT_URLCONF = 'poker.urls'
