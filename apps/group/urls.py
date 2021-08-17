@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import GroupApi, GroupUserApi
+from apps.group.views import GroupApi, GroupUserApi
 
 urlpatterns = [
       path('', GroupApi.as_view()),
