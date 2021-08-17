@@ -1,5 +1,6 @@
 from django.dispatch import receiver
 from django.db import models
+
 from apps.user.models import CustomBase, User
 
 
