@@ -1,20 +1,24 @@
 from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser
 
 class CustomBase(models.Model):
+    """
+    Class containing common fields in all models.
+    """
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         abstract = True
 
+
 class UserManager(BaseUserManager):
-    def create_user(self, email, password):
-        """
-        Creates and saves a User with the given email and password.
-        """
+    """
+    Custom User Manager class
+    """
+    def create_user(self, email, password, is_staff = False, is_admin = False):
         if not email:
             raise ValueError('Users must have an email address')
 
@@ -23,6 +27,8 @@ class UserManager(BaseUserManager):
         )
 
         user.set_password(password)
+        user.is_staff = is_staff
+        user.is_admin = is_admin
         user.save(using=self._db)
         return user
 
@@ -30,46 +36,35 @@ class UserManager(BaseUserManager):
         """
         Creates and saves a staff user with the given email and password.
         """
-        user = self.create_user(
-            email,
-            password=password,
-        )
-        user.staff = True
-        user.save(using=self._db)
-        return user
+        return self.create_user(email, password, True, False) 
 
     def create_superuser(self, email, password):
         """
         Creates and saves a superuser with the given email and password.
         """
-        user = self.create_user(
-            email,
-            password=password,
-        )
-        user.staff = True
-        user.admin = True
-        user.save(using=self._db)
-        return user
+        return self.create_user(email, password, True, True) 
 
 
 class User(AbstractBaseUser, CustomBase):
+    """
+    Custom user class
+    """
     email = models.EmailField(unique=True, help_text='Email Address', max_length=50)
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
-    staff = models.BooleanField(default=False)
-    admin = models.BooleanField(default=False)
+    first_name = models.CharField(max_length=150, help_text="First Name of User")
+    last_name = models.CharField(max_length=150, help_text="Last Name of User")
+    is_staff = models.BooleanField(default=False, help_text="This user can access admin panel")
+    is_admin = models.BooleanField(default=False, help_text="This user has all permissions without explicitly assigning them")
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
 
     def get_full_name(self):
-        # The user is identified by their email address
-        return self.email
+        # The user is identified by their first name and last name
+        return f"{self.first_name} {self.last_name}"
 
     def get_short_name(self):
-        # The user is identified by their email address
-        return self.email
+        # The user is identified by their first name
+        return self.first_name
 
     def __str__(self):
         return self.email
@@ -83,14 +78,3 @@ class User(AbstractBaseUser, CustomBase):
         "Does the user have permissions to view the app `app_label`?"
         # Simplest possible answer: Yes, always
         return True
-
-    @property
-    def is_staff(self):
-        "Is the user a member of staff?"
-        return self.staff
-
-    @property
-    def is_admin(self):
-        "Is the user a admin member?"
-        return self.admin
-        

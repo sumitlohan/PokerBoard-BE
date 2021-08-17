@@ -1,0 +1,12 @@
+from poker.settings.base import Setting
+
+class Setting(Setting):
+    ALLOWED_HOSTS = ['localhost',]
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': '<Enter Database Name>',
+            'USER': '<Enter Database Username>',
+            'PASSWORD': '<Enter Database Password>',
+        }
+    }
