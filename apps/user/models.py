@@ -1,9 +1,7 @@
-from django.dispatch import receiver
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.utils import timezone
-from apps.user.tasks import send_email_task
 
 class CustomBase(models.Model):
     """
@@ -81,8 +79,3 @@ class User(AbstractBaseUser, CustomBase):
         # Simplest possible answer: Yes, always
         return True
 
-
-@receiver(models.signals.post_save, sender=User)
-def handler(sender, instance, created, **kwargs):
-    if created:
-        send_email_task.delay(instance.email, instance.first_name)
