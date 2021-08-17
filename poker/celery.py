@@ -5,7 +5,7 @@ import class_settings
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'poker.settings.local')
-os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'LocalSettings')
+os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'Setting')
 class_settings.setup()
 
 app = Celery('poker')
