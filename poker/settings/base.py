@@ -1,12 +1,12 @@
 import os
 from class_settings import Settings
 
-class BaseSettings(Settings):
+class Setting(Settings):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     SECRET_KEY = 'bf#3+((2_t_-h0nt4k#)5md1rl%8p$o^*!k0+1v_^rb*j36(6g'
 
-    DEBUG = True
+    DEBUG = False
 
     ALLOWED_HOSTS = []
 
@@ -69,6 +69,13 @@ class BaseSettings(Settings):
             'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
         },
     ]
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'mydatabase',
+        }
+    }
 
 
     LANGUAGE_CODE = 'en-us'
