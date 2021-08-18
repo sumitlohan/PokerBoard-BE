@@ -5,7 +5,7 @@ from apps.group.models import Group, GroupUser
 
 class GroupUserSerializer(serializers.ModelSerializer):
     """
-    Group serializer
+    Group serializer for adding group members
     """
     class Meta:  
         model = GroupUser
@@ -21,7 +21,7 @@ class GroupUserSerializer(serializers.ModelSerializer):
 
 class GroupSerializer(serializers.ModelSerializer):
     """
-    Group serializer
+    Group serializer fetching/adding groups
     """
 
     class Meta:

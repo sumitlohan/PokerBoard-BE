@@ -37,12 +37,9 @@ class GroupUserApi(generics.CreateAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsGroupAdminPermission]
 
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        group = Group.objects.get(id=request.data.get('group'))
+    def perform_create(self, serializer):
+        group = Group.objects.get(id=self.request.data.get('group'))
         self.check_object_permissions(self.request, group)
 
         serializer.save()
-        return Response(serializer.data)
 
