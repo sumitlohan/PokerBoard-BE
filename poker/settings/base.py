@@ -21,7 +21,7 @@ class Setting(Settings):
         'rest_framework',
         'rest_framework.authtoken',
         'apps.user',
-        'apps.group',
+        'apps.group.app_config.GroupConfig',
         'corsheaders',
     ]
 

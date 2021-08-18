@@ -1,5 +1,3 @@
-from django.contrib.auth.models import Group
-
 from rest_framework import  serializers
 
 from apps.group.models import Group, GroupUser
@@ -9,22 +7,34 @@ class GroupUserSerializer(serializers.ModelSerializer):
     """
     Group serializer
     """
-
-
-    class Meta:
+    class Meta:  
         model = GroupUser
-        fields = ['user','group', 'created_at', 'updated_at']
-
+        fields = ['id','user','group', 'created_at', 'updated_at']
+        kwargs = {
+            'created_at': {
+                'read_only': True
+            },
+            'updated_at': {
+                'read_only': True
+            },
+        }
 
 class GroupSerializer(serializers.ModelSerializer):
     """
     Group serializer
     """
-    members = GroupUserSerializer(many=True)
-
 
     class Meta:
         model = Group
-        fields = ['id', 'name','created_by', 'members', 'created_at', 'updated_at']
-
-
+        fields = ['id', 'name','created_by', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'created_by': {
+                'read_only': True,
+            },
+            'created_at': {
+                'read_only': True,
+            },
+            'updated_at': {
+                'read_only': True,
+            },
+        }

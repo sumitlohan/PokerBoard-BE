@@ -1,6 +1,6 @@
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
 from apps.group.serializer import GroupSerializer, GroupUserSerializer
@@ -8,39 +8,34 @@ from apps.group.permissions import IsGroupAdminPermission
 from apps.group.models import Group
 
 
-class GroupApi(generics.GenericAPIView):
+class GroupApi(generics.CreateAPIView, generics.ListAPIView):
     """
     Group API for creating group and get list of groups
     a user is associated with.
     """
     serializer_class = GroupSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        data = {
-            "created_by": request.user.id
-        }
-        data.update(request.data)
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save(created_by=request.user)
         return Response(serializer.data)
 
     def get(self, request):
-        groups = list(map(lambda x: x.group ,request.user.groups.all()))
+        groups = Group.objects.filter(members__user=request.user)
         serializer = self.get_serializer(groups, many=True)
         return Response(serializer.data)
 
 
-class GroupUserApi(generics.GenericAPIView):
+class GroupUserApi(generics.CreateAPIView):
     """
     Group user API for adding group member
     """
     serializer_class = GroupUserSerializer
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsGroupAdminPermission]
-
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
