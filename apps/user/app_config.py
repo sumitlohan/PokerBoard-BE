@@ -7,4 +7,3 @@ class UserConfig(AppConfig):
         from apps.user.signals import send_email_handler
         from apps.user.models import User
         post_save.connect(send_email_handler, sender=User)
-        return super().ready()
