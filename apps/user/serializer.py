@@ -1,16 +1,26 @@
+from django.contrib.auth import authenticate
+from django.shortcuts import get_object_or_404
+from django.core import exceptions
+from django.core.validators import validate_email
+
 from rest_framework import  serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.authtoken.models import Token
 
 from apps.user.models import User
 
-# User serializer
+
 class UserSerializer(serializers.ModelSerializer):
+    token = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ['first_name','last_name','email','password']
+        fields = ['first_name','last_name','email','password','token']
         extra_kwargs = {
             'password': {'write_only': True},
         }
+
+    def get_token(self, user):
+        return Token.objects.get_or_create(user = user)[0].key
 
     def create(self, validated_data):
         user = User(
@@ -23,12 +33,31 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-# Login serializer
-class LoginSerializer(TokenObtainPairSerializer):
+class LoginSerializer(serializers.Serializer):
+    email = serializers.CharField()
+    password = serializers.CharField()
+
     def validate(self, attrs):
-        data = super(LoginSerializer, self).validate(attrs)
-        data.update({'id': self.user.id})
-        data.update({'first_name': self.user.first_name})
-        data.update({'last_name': self.user.last_name})
-        data.update({'email': self.user.email})
-        return data
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if validate_email(email):
+            user_request = get_object_or_404(
+                User,
+                email=email,
+            )
+
+            email = user_request.username
+
+        user = authenticate(username=email, password=password)
+
+        if user:
+            if not user.is_active:
+                msg = 'User account is disabled.'
+                raise exceptions.ValidationError(msg)
+        else:
+            msg = 'Unable to log in with provided credentials.'
+            raise exceptions.ValidationError(msg)
+
+        attrs['user'] = user
+        return attrs
