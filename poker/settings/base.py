@@ -2,12 +2,12 @@ import os
 from datetime import timedelta
 from class_settings import Settings
 
-class BaseSettings(Settings):
+class Setting(Settings):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     SECRET_KEY = 'bf#3+((2_t_-h0nt4k#)5md1rl%8p$o^*!k0+1v_^rb*j36(6g'
 
-    DEBUG = True
+    DEBUG = False
 
     ALLOWED_HOSTS = []
 
@@ -19,7 +19,7 @@ class BaseSettings(Settings):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'rest_framework',
-        'rest_framework_simplejwt',
+        'rest_framework.authtoken',
         'apps.user',
         'apps.group',
         'corsheaders',
@@ -62,7 +62,7 @@ class BaseSettings(Settings):
 
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
-            'rest_framework_simplejwt.authentication.JWTAuthentication',
+            'rest_framework.authentication.TokenAuthentication',
         ],
     }
 
@@ -86,6 +86,13 @@ class BaseSettings(Settings):
             'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
         },
     ]
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'mydatabase',
+        }
+    }
 
 
     LANGUAGE_CODE = 'en-us'
