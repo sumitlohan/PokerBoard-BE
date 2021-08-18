@@ -5,10 +5,10 @@ from apps.user.serializer import UserSerializer
 
 
 class RegisterApi(generics.GenericAPIView):
-    serializer_class = UserSerializer
     """
     User registration API
     """
+    serializer_class = UserSerializer
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

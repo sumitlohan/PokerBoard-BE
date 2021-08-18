@@ -2,6 +2,8 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
+from rest_framework.authtoken.models import Token as AuthToken
 
 class CustomBase(models.Model):
     """
@@ -78,3 +80,20 @@ class User(AbstractBaseUser, CustomBase):
         "Does the user have permissions to view the app `app_label`?"
         # Simplest possible answer: Yes, always
         return True
+
+
+class Token(AuthToken):
+    """
+    Custom Token Auth Model 
+    """
+    def get_expire_date():
+        return timezone.now() + settings.TOKEN_TTL
+
+    key = models.CharField("Key", max_length=40, db_index=True, unique=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="auth_token",
+        on_delete=models.CASCADE,
+        verbose_name="User",
+    )
+    expired_at = models.DateTimeField(default=get_expire_date)
