@@ -63,7 +63,7 @@ class Setting(Settings):
 
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
-            "apps.user.authentication.ExpiringTokenAuthentication",
+            "apps.user.authentication.CustomTokenAuthentication",
         ],
     }
 

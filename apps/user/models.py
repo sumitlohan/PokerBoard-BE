@@ -2,8 +2,11 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
+
 from rest_framework.authtoken.models import Token as AuthToken
+
+from apps.user import utils
+
 
 class CustomBase(models.Model):
     """
@@ -12,6 +15,7 @@ class CustomBase(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         abstract = True
 
@@ -20,7 +24,8 @@ class UserManager(BaseUserManager):
     """
     Custom User Manager class
     """
-    def create_user(self, email, password, is_staff = False, is_admin = False):
+
+    def create_user(self, email, password, is_staff=False, is_admin=False):
         if not email:
             raise ValueError('Users must have an email address')
 
@@ -38,24 +43,28 @@ class UserManager(BaseUserManager):
         """
         Creates and saves a staff user with the given email and password.
         """
-        return self.create_user(email, password, True, False) 
+        return self.create_user(email, password, True, False)
 
     def create_superuser(self, email, password):
         """
         Creates and saves a superuser with the given email and password.
         """
-        return self.create_user(email, password, True, True) 
+        return self.create_user(email, password, True, True)
 
 
 class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
     """
-    email = models.EmailField(unique=True, help_text='Email Address', max_length=50)
-    first_name = models.CharField(max_length=150, help_text="First Name of User")
+    email = models.EmailField(
+        unique=True, help_text='Email Address', max_length=50)
+    first_name = models.CharField(
+        max_length=150, help_text="First Name of User")
     last_name = models.CharField(max_length=150, help_text="Last Name of User")
-    is_staff = models.BooleanField(default=False, help_text="This user can access admin panel")
-    is_admin = models.BooleanField(default=False, help_text="This user has all permissions without explicitly assigning them")
+    is_staff = models.BooleanField(
+        default=False, help_text="This user can access admin panel")
+    is_admin = models.BooleanField(
+        default=False, help_text="This user has all permissions without explicitly assigning them")
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -86,14 +95,4 @@ class Token(AuthToken):
     """
     Custom Token Auth Model 
     """
-    def get_expire_date():
-        return timezone.now() + settings.TOKEN_TTL
-
-    key = models.CharField("Key", max_length=40, db_index=True, unique=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name="auth_token",
-        on_delete=models.CASCADE,
-        verbose_name="User",
-    )
-    expired_at = models.DateTimeField(default=get_expire_date)
+    expired_at = models.DateTimeField(default=utils.get_expire_date)

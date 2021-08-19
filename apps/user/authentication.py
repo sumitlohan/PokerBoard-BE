@@ -1,39 +1,40 @@
 from django.conf import settings
 from django.utils import timezone
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.exceptions import AuthenticationFailed
 
-from apps.user.models import Token
+from rest_framework import (
+    authentication as rest_framework_authentication,
+    exceptions as rest_framework_exceptions
+)
+
+from apps.user import models as user_model
 
 
-class ExpiringTokenAuthentication(TokenAuthentication):
+class CustomTokenAuthentication(rest_framework_authentication.TokenAuthentication):
     """
-    Expiring token for mobile and desktop clients.
-    It expires every {n} hrs requiring client to supply valid username 
-    and password for new one to be created.
+    Checking if the token has expired 
     """
 
-    model = Token
+    model = user_model.Token
 
     def authenticate_credentials(self, key, request=None):
-        models = self.get_model()
-        
+        model = self.get_model()
+
         try:
-            token = models.objects.select_related("user").get(key=key)
-        except models.DoesNotExist:
-            raise AuthenticationFailed(
+            token = model.objects.select_related("user").get(key=key)
+        except model.DoesNotExist:
+            raise rest_framework_exceptions.AuthenticationFailed(
                 {"error": "Invalid or Inactive Token"}
             )
 
         if not token.user.is_active:
-            raise AuthenticationFailed(
+            raise rest_framework_exceptions.AuthenticationFailed(
                 {"error": "Invalid user"}
             )
 
-        utc_now = timezone.now()
+        time_now = timezone.now()
 
-        if token.expired_at < utc_now :
-            raise AuthenticationFailed(
+        if token.expired_at < time_now:
+            raise rest_framework_exceptions.AuthenticationFailed(
                 {"error": "Token has expired"}
             )
         return token.user, token

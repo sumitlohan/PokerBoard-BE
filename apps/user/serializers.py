@@ -1,8 +1,7 @@
 from rest_framework import serializers as rest_framework_serializers
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 
 from apps.user.models import Token, User
+from apps.user import validators as field_validator
 
 
 class UserSerializer(rest_framework_serializers.ModelSerializer):
@@ -27,10 +26,10 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
             last_name=validated_data['last_name'],
             email=validated_data['email'],
         )
-        try:
-            validate_password(validated_data['password'], user=user)
-        except ValidationError as e:
-            raise rest_framework_serializers.ValidationError({"error":e})
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+    def validate_password(self, password):
+        field_validator.CustomPasswordValidator.validate(self,password)
+        return password
