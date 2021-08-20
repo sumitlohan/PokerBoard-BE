@@ -1,8 +1,10 @@
 import datetime
 
+from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from rest_framework.authtoken.models import Token as AuthToken
 
@@ -94,5 +96,8 @@ class Token(AuthToken):
     """
     Custom Token Auth Model 
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name='auth_token',
+        on_delete=models.CASCADE, verbose_name=_("User")
+    )
     expired_at = models.DateTimeField(default=utils.get_expire_date)
