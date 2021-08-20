@@ -1,5 +1,4 @@
 import os
-from datetime import timedelta
 from class_settings import Settings
 
 class Setting(Settings):
@@ -64,10 +63,6 @@ class Setting(Settings):
         'DEFAULT_AUTHENTICATION_CLASSES': [
             'rest_framework.authentication.TokenAuthentication',
         ],
-    }
-
-    SIMPLE_JWT = {
-        'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     }
 
     WSGI_APPLICATION = 'poker.wsgi.application'
