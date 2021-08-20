@@ -1,6 +1,9 @@
 from rest_framework import serializers as rest_framework_serializers
 
-from apps.user.models import Token, User
+from apps.user.models import(
+    Token as AuthToken,
+    User as user_models
+)
 from apps.user import validators as field_validator
 
 
@@ -8,28 +11,26 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
     """
     Custom User Serializer class 
     """
-    token = rest_framework_serializers.SerializerMethodField()
+    token = rest_framework_serializers.CharField(max_length=50, read_only=True)
 
     class Meta:
-        model = User
+        model = user_models
         fields = ['first_name', 'last_name', 'email', 'password', 'token']
         extra_kwargs = {
             'password': {'write_only': True},
         }
 
-    def get_token(self, user):
-        return Token.objects.create(user=user).key
+    def validate_password(self, password):
+        field_validator.CustomPasswordValidator.validate(password)
+        return password
 
     def create(self, validated_data):
-        user = User(
+        user = user_models(
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             email=validated_data['email'],
         )
         user.set_password(validated_data['password'])
         user.save()
+        user.token=AuthToken.objects.create(user=user).key
         return user
-
-    def validate_password(self, password):
-        field_validator.CustomPasswordValidator.validate(self,password)
-        return password

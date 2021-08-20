@@ -8,7 +8,7 @@ class Setting(Settings):
 
     SECRET_KEY = 'bf#3+((2_t_-h0nt4k#)5md1rl%8p$o^*!k0+1v_^rb*j36(6g'
 
-    DEBUG = False
+    DEBUG = True
 
     ALLOWED_HOSTS = []
 

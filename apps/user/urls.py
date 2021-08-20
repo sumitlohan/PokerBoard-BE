@@ -1,7 +1,8 @@
-from django.urls import path
+from rest_framework.routers import SimpleRouter
 
-from apps.user.views import RegisterApi
+from apps.user import views
 
-urlpatterns = [
-      path('accounts/register', RegisterApi.as_view()),
-]
+
+router = SimpleRouter(trailing_slash=False)
+router.register(r'register', views.RegisterApi, basename='register')
+urlpatterns = router.urls

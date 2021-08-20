@@ -1,5 +1,7 @@
+import datetime
+
 from django.conf import settings
-from django.utils import timezone
+
 
 def get_expire_date():
-        return timezone.now() + settings.TOKEN_TTL
+    return datetime.datetime.now() + settings.TOKEN_TTL

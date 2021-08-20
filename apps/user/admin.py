@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-import apps.user.models as user_model
+import apps.user.models as user_models
 
 
-admin.site.register(user_model.User)
-admin.site.register(user_model.Token)
+admin.site.register(user_models.User)
+admin.site.register(user_models.Token)

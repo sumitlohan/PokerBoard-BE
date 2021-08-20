@@ -1,7 +1,8 @@
+import datetime
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
-from django.utils import timezone
 
 from rest_framework.authtoken.models import Token as AuthToken
 
@@ -13,7 +14,7 @@ class CustomBase(models.Model):
     Class containing common fields in all models.
     """
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=datetime.datetime.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -56,15 +57,13 @@ class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
     """
-    email = models.EmailField(
-        unique=True, help_text='Email Address', max_length=50)
-    first_name = models.CharField(
-        max_length=150, help_text="First Name of User")
-    last_name = models.CharField(max_length=150, help_text="Last Name of User")
-    is_staff = models.BooleanField(
-        default=False, help_text="This user can access admin panel")
+    email = models.EmailField(unique=True, help_text='Email Address', max_length=50)
+    first_name = models.CharField(max_length=50, help_text="First Name of User")
+    last_name = models.CharField(max_length=50, help_text="Last Name of User")
+    is_staff = models.BooleanField(default=False, help_text="This user can access admin panel")
     is_admin = models.BooleanField(
-        default=False, help_text="This user has all permissions without explicitly assigning them")
+        default=False, help_text="This user has all permissions without explicitly assigning them"
+    )
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -95,4 +94,5 @@ class Token(AuthToken):
     """
     Custom Token Auth Model 
     """
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     expired_at = models.DateTimeField(default=utils.get_expire_date)
