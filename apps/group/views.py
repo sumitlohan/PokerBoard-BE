@@ -33,9 +33,9 @@ class GroupApi(ModelViewSet):
         groups = Group.objects.filter(members__user=self.request.user)
         return groups
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        group = Group.objects.get(id=pk)
+        serializer = self.get_serializer(group)
         return Response(serializer.data)
 
 
@@ -47,14 +47,14 @@ class GroupUserApi(ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsGroupAdminPermission]
 
-    def post(self, request, pk):
+    def post(self, request, pk=None):
         group = Group.objects.get(id=pk)
         self.check_object_permissions(request, group)
-        print(request.data)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
         user = User.objects.get(email=email)
-        GroupUser.objects.create(user=user, group=group)
+        group_user = GroupUser(user=user, group=group)
+        group_user.save()
         return Response({"status": "success"})
 
