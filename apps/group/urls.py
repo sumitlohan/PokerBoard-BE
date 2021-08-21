@@ -10,5 +10,5 @@ urlpatterns = [
       path('<int:pk>', GroupApi.as_view({
             'get': 'retrieve'
       })),
-      path('<int:pk>/create-members', GroupUserApi.as_view({'post': 'post'}))
+      path('<int:pk>/create-members', GroupUserApi.as_view({'post': 'create'}))
 ]

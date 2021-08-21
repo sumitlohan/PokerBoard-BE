@@ -1,7 +1,8 @@
 from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.mixins import CreateModelMixin
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -46,15 +47,14 @@ class GroupApi(ModelViewSet):
             return Response({"error": "Group does not exist"}, status=HTTP_404_NOT_FOUND)
 
 
-class GroupUserApi(ModelViewSet):
+class GroupUserApi(GenericViewSet, CreateModelMixin):
     """
     Group user API for adding group member
     """
     serializer_class = AddGroupMemberSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsGroupAdminPermission]
-
-    def post(self, request, pk=None):
+    def create(self, request, pk=None):
         try:
             group = Group.objects.get(id=pk)
             self.check_object_permissions(request, group)
