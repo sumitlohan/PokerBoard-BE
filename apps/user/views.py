@@ -1,9 +1,9 @@
-from rest_framework import viewsets, mixins
+from rest_framework.generics import CreateAPIView
 
 from apps.user import serializers as user_serializers
 
 
-class RegisterApi(viewsets.GenericViewSet, mixins.CreateModelMixin):
+class RegisterApi(CreateAPIView):
     """
     User registration API
     """

@@ -1,8 +1,7 @@
-from rest_framework.routers import SimpleRouter
-
+from django.urls import path
 from apps.user import views
 
 
-router = SimpleRouter(trailing_slash=False)
-router.register(r'register', views.RegisterApi, basename='register')
-urlpatterns = router.urls
+urlpatterns = [
+    path('register', views.RegisterApi.as_view(), name='register'),
+]
