@@ -25,6 +25,7 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
             last_name=validated_data['last_name'],
             email=validated_data['email'],
         )
+        user.is_active = False
         user.set_password(validated_data['password'])
         user.save()
         return user

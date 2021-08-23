@@ -3,9 +3,10 @@ import datetime
 from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.core.validators import RegexValidator
+from django.core.mail import send_mail
 
 from rest_framework.authtoken.models import Token as AuthToken
 
@@ -55,7 +56,6 @@ class UserManager(BaseUserManager):
         """
         return self.create_user(email, password, True, True)
 
-
 PASSWORD_REGEX = RegexValidator(
         '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', 
         message="Password must be of minimum 8 characters, at least one uppercase letter, lowercase letter, number and special character"
@@ -97,6 +97,10 @@ class User(AbstractBaseUser, CustomBase):
         "Does the user have permissions to view the app `app_label`?"
         # Simplest possible answer: Yes, always
         return True
+
+    def email_user(self, subject, message, from_email=None, **kwargs):
+        """Send an email to this user."""
+        send_mail(subject, message, from_email, [self.email], **kwargs)
 
 
 class Token(AuthToken):
