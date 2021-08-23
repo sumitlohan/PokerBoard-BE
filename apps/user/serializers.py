@@ -2,6 +2,7 @@ from rest_framework import serializers as rest_framework_serializers
 
 from apps.user import models as user_models
 
+from django.contrib.auth import hashers
 
 class UserSerializer(rest_framework_serializers.ModelSerializer):
     """
@@ -23,7 +24,6 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         return user_models.Token.objects.create(user=user).key
 
     def create(self, validated_data):
+        validated_data['password'] = hashers.make_password(validated_data['password'])
         user = super().create(validated_data)
-        user.set_password(validated_data['password'])
-        user.save()
         return user
