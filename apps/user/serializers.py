@@ -7,7 +7,7 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
     """
     Custom User Serializer class 
     """
-    token = rest_framework_serializers.CharField(max_length=50, read_only=True)
+    token = rest_framework_serializers.SerializerMethodField()
 
     class Meta:
         model = user_models.User
@@ -15,6 +15,9 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True},
         }
+
+    def get_token(self, user):
+        return user_models.Token.objects.create(user=user).key
 
     def create(self, validated_data):
         user = user_models.User(
@@ -24,5 +27,4 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         )
         user.set_password(validated_data['password'])
         user.save()
-        user.token = user_models.Token.objects.create(user=user).key
         return user
