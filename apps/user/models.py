@@ -103,8 +103,5 @@ class Token(AuthToken):
     """
     Custom Token Auth Model 
     """
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='auth_tokens',
-        on_delete=models.CASCADE, verbose_name=_("User")
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='auth_tokens', on_delete=models.CASCADE)
     expired_at = models.DateTimeField(default=utils.get_expire_date)

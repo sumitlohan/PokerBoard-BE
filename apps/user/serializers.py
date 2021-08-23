@@ -17,14 +17,13 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         }
 
     def get_token(self, user):
+        """
+        Creating token for the user
+        """
         return user_models.Token.objects.create(user=user).key
 
     def create(self, validated_data):
-        user = user_models.User(
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            email=validated_data['email'],
-        )
+        user = super().create(validated_data)
         user.set_password(validated_data['password'])
         user.save()
         return user
