@@ -18,7 +18,7 @@ class Setting(Settings):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'rest_framework',
-        'apps.user',
+        'apps.user.app_config.UserConfig',
     ]
 
     AUTH_USER_MODEL = 'user.User'
