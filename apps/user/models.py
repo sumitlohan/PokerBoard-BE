@@ -5,6 +5,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import RegexValidator
 
 from rest_framework.authtoken.models import Token as AuthToken
 
@@ -55,6 +56,11 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, True, True)
 
 
+PASSWORD_REGEX = RegexValidator(
+        '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', 
+        message="Password must be of minimum 8 characters, at least one uppercase letter, lowercase letter, number and special character"
+)
+
 class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
@@ -66,6 +72,7 @@ class User(AbstractBaseUser, CustomBase):
     is_admin = models.BooleanField(
         default=False, help_text="This user has all permissions without explicitly assigning them"
     )
+    password = models.CharField(max_length=150, validators=[PASSWORD_REGEX])
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -97,7 +104,7 @@ class Token(AuthToken):
     Custom Token Auth Model 
     """
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='auth_token',
+        settings.AUTH_USER_MODEL, related_name='auth_tokens',
         on_delete=models.CASCADE, verbose_name=_("User")
     )
     expired_at = models.DateTimeField(default=utils.get_expire_date)

@@ -8,7 +8,7 @@ class Setting(Settings):
 
     SECRET_KEY = 'bf#3+((2_t_-h0nt4k#)5md1rl%8p$o^*!k0+1v_^rb*j36(6g'
 
-    DEBUG = True
+    DEBUG = False
 
     ALLOWED_HOSTS = []
 
@@ -71,7 +71,16 @@ class Setting(Settings):
 
     AUTH_PASSWORD_VALIDATORS = [
         {
-            'NAME': 'apps.user.validators.CustomPasswordValidator',
+            'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        },
+        {
+            'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
         },
     ]
 
