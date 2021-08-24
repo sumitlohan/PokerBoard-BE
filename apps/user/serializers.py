@@ -10,6 +10,7 @@ from apps.user import models as user_models
 from apps.user.utils import TokenGenerator
 
 
+
 class UserSerializer(rest_framework_serializers.ModelSerializer):
     """
     Custom User Serializer class 

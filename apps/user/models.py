@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from rest_framework.authtoken.models import Token as AuthToken
 
 from apps.user import utils
+from apps.user import constants
 
 
 class CustomBase(models.Model):
@@ -56,15 +57,12 @@ class UserManager(BaseUserManager):
         """
         return self.create_user(email, password, True, True)
 
-PASSWORD_REGEX = RegexValidator(
-        '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', 
-        message="Password must be of minimum 8 characters, at least one uppercase letter, lowercase letter, number and special character"
-)
 
 class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
     """
+    PASSWORD_REGEX = RegexValidator(constants.PASSWORD_VALIDATION_REGEX, message=constants.PASSWORD_VALIDATION_MESSAGE)
     email = models.EmailField(unique=True, help_text='Email Address', max_length=50)
     first_name = models.CharField(max_length=50, help_text="First Name of User")
     last_name = models.CharField(max_length=50, help_text="Last Name of User")

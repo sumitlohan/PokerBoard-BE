@@ -12,7 +12,7 @@ class CustomTokenAuthentication(TokenAuthentication):
     """
     model = user_models.Token
 
-    def authenticate_credentials(self, key, request=None):
+    def authenticate_credentials(self, key):
         """
         Check if the token is valid with the provided key
         """
