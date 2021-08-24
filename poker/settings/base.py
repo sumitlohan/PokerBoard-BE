@@ -1,5 +1,5 @@
 import os
-import datetime
+
 from class_settings import Settings
 
 
@@ -19,9 +19,9 @@ class Setting(Settings):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
+        'corsheaders'
         'rest_framework',
         'apps.user',
-        'corsheaders'
     ]
 
     AUTH_USER_MODEL = 'user.User'
@@ -30,7 +30,7 @@ class Setting(Settings):
 
     AUTH_GROUP = None
 
-    TOKEN_TTL = datetime.timedelta(minutes=5)
+    TOKEN_TTL = 5
 
     MIDDLEWARE = [
         'django.middleware.security.SecurityMiddleware',
