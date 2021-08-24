@@ -4,6 +4,7 @@ from apps.user import models as user_models
 
 from django.contrib.auth import hashers
 
+
 class UserSerializer(rest_framework_serializers.ModelSerializer):
     """
     Custom User Serializer class 
