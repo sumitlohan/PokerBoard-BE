@@ -1,5 +1,6 @@
-from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import IntegrityError
+from rest_framework.generics import CreateAPIView, get_object_or_404
 
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.mixins import CreateModelMixin
@@ -23,48 +24,24 @@ class GroupApi(ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def create(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save(created_by=request.user)
-        return Response(serializer.data)
-
-    def list(self, request):
-        groups = self.get_queryset()
-        serializer = self.get_serializer(groups, many=True)
-        return Response(serializer.data)
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
     def get_queryset(self):
         groups = Group.objects.filter(members__user=self.request.user)
         return groups
 
-    def retrieve(self, request, pk=None, *args, **kwargs):
-        try:
-            group = Group.objects.get(id=pk)
-            serializer = self.get_serializer(group)
-            return Response(serializer.data)
-        except ObjectDoesNotExist:
-            return Response({"error": "Group does not exist"}, status=HTTP_404_NOT_FOUND)
 
-
-class GroupUserApi(GenericViewSet, CreateModelMixin):
+class GroupUserApi(CreateAPIView):
     """
     Group user API for adding group member
     """
     serializer_class = AddGroupMemberSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsGroupAdminPermission]
-    def create(self, request, pk=None):
-        try:
-            group = Group.objects.get(id=pk)
-            self.check_object_permissions(request, group)
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            email = serializer.validated_data["email"]
-            user = User.objects.get(email=email)
-            group_user = GroupUser(user=user, group=group)
-            group_user.save()
-            return Response({"status": "success"})
-        except IntegrityError:
-            return Response({"error": "A member can't be added to a group twice"}, status=HTTP_400_BAD_REQUEST)
 
+    def perform_create(self, serializer):
+        pk = serializer.validated_data["groupId"]
+        group = get_object_or_404(Group.objects.all(), id=pk)
+        self.check_object_permissions(self.request, group)
+        serializer.save(group=group)
