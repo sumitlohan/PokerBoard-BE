@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import IntegrityError
 
 from rest_framework import  serializers
@@ -37,15 +36,17 @@ class AddGroupMemberSerializer(serializers.Serializer):
     def create(self, validated_data):
         try:
             email = validated_data["email"]
+            groupId = validated_data["groupId"]
             group = validated_data["group"]
-            user = User.objects.get(email=email)
-            
+            user_objs = User.objects.filter(email=email)
+            if not user_objs:
+                raise serializers.ValidationError("No such user")
+            user = user_objs.first()
             GroupUser.objects.create(user=user, group=group)
             return {
-                "email": email
+                "email": email,
+                "groupId": groupId
             }
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError("No such user")
         except IntegrityError:
             raise serializers.ValidationError("A member can't be added to a group twice")
 
