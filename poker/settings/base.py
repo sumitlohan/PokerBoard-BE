@@ -12,7 +12,7 @@ class Setting(Settings):
 
     ALLOWED_HOSTS = []
 
-    LOCAL_APPS = [
+    DJANGO_APPS = [
         'django.contrib.admin',
         'django.contrib.auth',
         'django.contrib.contenttypes',
@@ -21,13 +21,16 @@ class Setting(Settings):
         'django.contrib.staticfiles',
     ]
 
-    THIRD_PARTY_APPS = [
+    LOCAL_APPS = [
         'apps.user',
+    ]
+
+    THIRD_PARTY_APPS = [
         'corsheaders',
         'rest_framework',
     ]
 
-    INSTALLED_APPS = LOCAL_APPS + THIRD_PARTY_APPS
+    INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
     AUTH_USER_MODEL = 'user.User'
 
