@@ -33,15 +33,19 @@ class AddGroupMemberSerializer(serializers.Serializer):
     """
     email = serializers.EmailField()
     groupId = serializers.IntegerField()
+    
+    def validate_email(self, email):
+        user_objs = User.objects.filter(email=email)
+        if not user_objs:
+            raise serializers.ValidationError("No such user")
+        return email
+
     def create(self, validated_data):
         try:
             email = validated_data["email"]
             groupId = validated_data["groupId"]
             group = validated_data["group"]
-            user_objs = User.objects.filter(email=email)
-            if not user_objs:
-                raise serializers.ValidationError("No such user")
-            user = user_objs.first()
+            user = User.objects.get(email=email)
             GroupUser.objects.create(user=user, group=group)
             return {
                 "email": email,
