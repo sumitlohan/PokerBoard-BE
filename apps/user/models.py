@@ -73,6 +73,7 @@ class User(AbstractBaseUser, CustomBase):
         default=False, help_text="This user has all permissions without explicitly assigning them"
     )
     password = models.CharField(max_length=150, validators=[PASSWORD_REGEX])
+    is_account_verified = models.BooleanField(default=False, help_text="This account has verified")
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -107,8 +108,5 @@ class Token(AuthToken):
     """
     Custom Token Auth Model 
     """
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='auth_tokens',
-        on_delete=models.CASCADE, verbose_name=_("User")
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='auth_tokens', on_delete=models.CASCADE)
     expired_at = models.DateTimeField(default=utils.get_expire_date)
