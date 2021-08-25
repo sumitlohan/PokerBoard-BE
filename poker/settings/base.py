@@ -1,5 +1,7 @@
 import os
+import datetime
 from class_settings import Settings
+
 
 class Setting(Settings):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,7 +20,6 @@ class Setting(Settings):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'rest_framework',
-        'rest_framework.authtoken',
         'apps.user',
         'corsheaders'
     ]
@@ -28,6 +29,8 @@ class Setting(Settings):
     CORS_ORIGIN_ALLOW_ALL = True
 
     AUTH_GROUP = None
+
+    TOKEN_TTL = datetime.timedelta(minutes=5)
 
     MIDDLEWARE = [
         'django.middleware.security.SecurityMiddleware',
@@ -60,7 +63,7 @@ class Setting(Settings):
 
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
-            'rest_framework.authentication.TokenAuthentication',
+            "apps.user.authentication.CustomTokenAuthentication",
         ],
     }
 
@@ -88,10 +91,9 @@ class Setting(Settings):
         }
     }
 
-
     LANGUAGE_CODE = 'en-us'
 
-    TIME_ZONE = 'UTC'
+    TIME_ZONE = 'Asia/Kolkata'
 
     USE_I18N = True
 
