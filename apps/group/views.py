@@ -1,18 +1,12 @@
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.utils import IntegrityError
-from rest_framework.generics import CreateAPIView, get_object_or_404
+from rest_framework.generics import CreateAPIView
 
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework.mixins import CreateModelMixin
-from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
 
 from apps.group.serializer import AddGroupMemberSerializer, GroupSerializer
 from apps.group.permissions import IsGroupAdminPermission
-from apps.group.models import Group, GroupUser
-from apps.user.models import User
+from apps.group.models import Group
 
 
 class GroupApi(ModelViewSet):
@@ -41,7 +35,6 @@ class GroupUserApi(CreateAPIView):
     permission_classes = [IsAuthenticated, IsGroupAdminPermission]
 
     def perform_create(self, serializer):
-        pk = serializer.validated_data["groupId"]
-        group = get_object_or_404(Group.objects.all(), id=pk)
+        group = serializer.validated_data["group"]
         self.check_object_permissions(self.request, group)
-        serializer.save(group=group)
+        serializer.save()

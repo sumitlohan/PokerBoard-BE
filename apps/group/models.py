@@ -9,6 +9,9 @@ class Group(CustomBase):
     """
     name = models.CharField(unique=True, max_length=50, help_text="Name of the group")
     created_by = models.ForeignKey(User, related_name="groups_created", on_delete=models.CASCADE)
+    
+    def __str__(self) -> str:
+        return self.name
 
 
 class GroupUser(CustomBase):
@@ -20,3 +23,6 @@ class GroupUser(CustomBase):
 
     class Meta:
         unique_together = ('user', 'group')
+    
+    def __str__(self) -> str:
+        return f"{self.user.email} - {self.group.name}"
