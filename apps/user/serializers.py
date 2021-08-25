@@ -1,19 +1,19 @@
-from rest_framework import serializers as rest_framework_serializers
-
+from django.contrib.auth import hashers
 from django.contrib.auth import hashers
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
+from rest_framework import serializers as rest_framework_serializers
+
 from apps.user import models as user_models
 from apps.user.utils import TokenGenerator
 
 
-
 class UserSerializer(rest_framework_serializers.ModelSerializer):
     """
-    Custom User Serializer class 
+    Custom User Serializer class
     """
     token = rest_framework_serializers.SerializerMethodField()
 
@@ -31,6 +31,9 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         return user_models.Token.objects.create(user=user).key
 
     def create(self, validated_data):
+        """
+        Hashing the password and creating a new user
+        """
         validated_data['password'] = hashers.make_password(validated_data['password'])
         user = super().create(validated_data)
         current_site = get_current_site(self.context['request'])

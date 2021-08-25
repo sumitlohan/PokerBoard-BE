@@ -1,17 +1,19 @@
-import datetime
-
 from django.conf import settings
+from django.core.validators import RegexValidator
+from django.core.mail import send_mail
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.core.mail import send_mail
+
 
 from rest_framework.authtoken.models import Token as AuthToken
 
-from apps.user import utils
-from apps.user import constants
+from apps.user import (
+    constants as user_constants,
+    utils as user_utils
+)
 
 
 class CustomBase(models.Model):
@@ -19,7 +21,7 @@ class CustomBase(models.Model):
     Class containing common fields in all models.
     """
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(default=datetime.datetime.now)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -62,7 +64,7 @@ class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
     """
-    PASSWORD_REGEX = RegexValidator(constants.PASSWORD_VALIDATION_REGEX, message=constants.PASSWORD_VALIDATION_MESSAGE)
+    PASSWORD_REGEX = RegexValidator(user_constants.PASSWORD_VALIDATION_REGEX, message=user_constants.PASSWORD_VALIDATION_MESSAGE)
     email = models.EmailField(unique=True, help_text='Email Address', max_length=50)
     first_name = models.CharField(max_length=50, help_text="First Name of User")
     last_name = models.CharField(max_length=50, help_text="Last Name of User")
@@ -98,13 +100,13 @@ class User(AbstractBaseUser, CustomBase):
         return True
 
     def email_user(self, subject, message, from_email=None, **kwargs):
-        """Send an email to this user."""
+        "Send an email to this user."
         send_mail(subject, message, from_email, [self.email], **kwargs)
 
 
 class Token(AuthToken):
     """
-    Custom Token Auth Model 
+    Custom Token Auth Model
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='auth_tokens', on_delete=models.CASCADE)
-    expired_at = models.DateTimeField(default=utils.get_expire_date)
+    expired_at = models.DateTimeField(default=user_utils.get_expire_date)

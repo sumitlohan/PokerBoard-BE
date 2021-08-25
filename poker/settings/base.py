@@ -1,5 +1,5 @@
 import os
-import datetime
+
 from class_settings import Settings
 
 
@@ -8,21 +8,29 @@ class Setting(Settings):
 
     SECRET_KEY = 'bf#3+((2_t_-h0nt4k#)5md1rl%8p$o^*!k0+1v_^rb*j36(6g'
 
-    DEBUG = True
+    DEBUG = False
 
     ALLOWED_HOSTS = []
 
-    INSTALLED_APPS = [
+    DJANGO_APPS = [
         'django.contrib.admin',
         'django.contrib.auth',
         'django.contrib.contenttypes',
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
-        'rest_framework',
-        'apps.user',
-        'corsheaders'
     ]
+
+    LOCAL_APPS = [
+        'apps.user',
+    ]
+
+    THIRD_PARTY_APPS = [
+        'corsheaders',
+        'rest_framework',
+    ]
+
+    INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
     AUTH_USER_MODEL = 'user.User'
 
@@ -30,7 +38,7 @@ class Setting(Settings):
 
     AUTH_GROUP = None
 
-    TOKEN_TTL = datetime.timedelta(minutes=5)
+    TOKEN_TTL = 5
 
     MIDDLEWARE = [
         'django.middleware.security.SecurityMiddleware',

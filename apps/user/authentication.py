@@ -8,7 +8,7 @@ from apps.user import models as user_models
 
 class CustomTokenAuthentication(TokenAuthentication):
     """
-    Checking if the token has expired 
+    Checking if the token has expired
     """
     model = user_models.Token
 
@@ -17,7 +17,6 @@ class CustomTokenAuthentication(TokenAuthentication):
         Check if the token is valid with the provided key
         """
         user, token = super().authenticate_credentials(key)
-        time_now = datetime.datetime.now()
-        if token.expired_at < time_now:
+        if token.expired_at < datetime.datetime.now():
             raise AuthenticationFailed({"error": "Token has expired"})
         return user, token
