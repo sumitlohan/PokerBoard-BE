@@ -33,9 +33,20 @@ class AddGroupMemberSerializer(serializers.Serializer):
     """
     Serializer for adding group member
     """
+    user = UserSerializer(many=False, required=False)
     email = serializers.EmailField()
     group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
-    
+
+    class Meta:
+        extra_kwargs = {
+            "user": {
+                "read_only": True
+            },
+            "email": {
+                "write_only": True
+            }
+        }
+
     def validate_email(self, email):
         user_objs = User.objects.filter(email=email)
         if not user_objs:
@@ -48,6 +59,7 @@ class AddGroupMemberSerializer(serializers.Serializer):
             group = validated_data["group"]
             user = User.objects.get(email=email)
             GroupUser.objects.create(user=user, group=group)
+            validated_data.update({"user": user})
             return validated_data
         except IntegrityError:
             raise serializers.ValidationError("A member can't be added to a group twice")
