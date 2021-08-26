@@ -1,5 +1,3 @@
-from django.db.utils import IntegrityError
-
 from rest_framework import  serializers
 
 from apps.user.models import User
@@ -15,7 +13,7 @@ class GroupUserSerializer(serializers.ModelSerializer):
 
     class Meta:  
         model = GroupUser
-        fields = ['id','user', 'group', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'group', 'created_at', 'updated_at']
         kwargs = {
             'id': {
                 'read_only': True,
@@ -53,16 +51,22 @@ class AddGroupMemberSerializer(serializers.Serializer):
             raise serializers.ValidationError("No such user")
         return email
 
-    def create(self, validated_data):
-        try:
-            email = validated_data["email"]
-            group = validated_data["group"]
-            user = User.objects.get(email=email)
-            GroupUser.objects.create(user=user, group=group)
-            validated_data.update({"user": user})
-            return validated_data
-        except IntegrityError:
+    def validate(self, attrs):
+        email = attrs["email"]
+        group = attrs["group"]
+        user = User.objects.get(email=email)
+        member = GroupUser.objects.filter(user=user, group=group)
+        if member:
             raise serializers.ValidationError("A member can't be added to a group twice")
+        return attrs
+
+    def create(self, validated_data):
+        email = validated_data["email"]
+        group = validated_data["group"]
+        user = User.objects.get(email=email)
+        GroupUser.objects.create(user=user, group=group)
+        validated_data.update({"user": user})
+        return validated_data
 
 
 class GroupSerializer(serializers.ModelSerializer):

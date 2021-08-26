@@ -5,7 +5,7 @@ from apps.user.models import CustomBase, User
 
 class Group(CustomBase):
     """
-    Group model
+    Group model for storing name and group admin details
     """
     name = models.CharField(unique=True, max_length=50, help_text="Name of the group")
     created_by = models.ForeignKey(User, related_name="groups_created", on_delete=models.CASCADE)
