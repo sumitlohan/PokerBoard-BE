@@ -1,8 +1,4 @@
-def create(self, validated_data):
-        """
-        Hashing the password and creating a new user
-        """
-        return user_models.Token.objects.create(user=user).keyfrom django.urls import path
+from django.urls import path
 
 from apps.user import views
 
