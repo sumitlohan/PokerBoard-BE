@@ -3,7 +3,6 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 
-from apps.user.authentication import CustomTokenAuthentication
 from apps.group.serializer import AddGroupMemberSerializer, GroupSerializer
 from apps.group.permissions import IsGroupAdminPermission
 from apps.group.models import Group
@@ -15,7 +14,6 @@ class GroupApi(ModelViewSet):
     a user is associated with.
     """
     serializer_class = GroupSerializer
-    authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
@@ -31,7 +29,6 @@ class GroupUserApi(CreateAPIView):
     Group user API for adding group member
     """
     serializer_class = AddGroupMemberSerializer
-    authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated, IsGroupAdminPermission]
 
     def perform_create(self, serializer):

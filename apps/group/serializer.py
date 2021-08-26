@@ -31,41 +31,27 @@ class AddGroupMemberSerializer(serializers.Serializer):
     """
     Serializer for adding group member
     """
-    user = UserSerializer(many=False, required=False)
-    email = serializers.EmailField()
-    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.all())
-
-    class Meta:
-        extra_kwargs = {
-            "user": {
-                "read_only": True
-            },
-            "email": {
-                "write_only": True
-            }
-        }
-
-    def validate_email(self, email):
-        user_objs = User.objects.filter(email=email)
-        if not user_objs:
-            raise serializers.ValidationError("No such user")
-        return email
+    user = UserSerializer(many=False, read_only=True)
+    email = serializers.EmailField(write_only=True)
+    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.only("id"))
 
     def validate(self, attrs):
         email = attrs["email"]
         group = attrs["group"]
-        user = User.objects.get(email=email)
+        user_objs = User.objects.filter(email=email)
+        if not user_objs:
+            raise serializers.ValidationError("No such user")
+        user = user_objs.first()
         member = GroupUser.objects.filter(user=user, group=group)
         if member:
             raise serializers.ValidationError("A member can't be added to a group twice")
+        attrs.update({"user": user})
         return attrs
 
     def create(self, validated_data):
-        email = validated_data["email"]
         group = validated_data["group"]
-        user = User.objects.get(email=email)
+        user = validated_data["user"]
         GroupUser.objects.create(user=user, group=group)
-        validated_data.update({"user": user})
         return validated_data
 
 
