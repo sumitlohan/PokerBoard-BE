@@ -1,7 +1,5 @@
 from django.contrib.auth import hashers, authenticate
 from django.core import exceptions
-from django.db import models
-from django.template.defaultfilters import first
 from django.contrib.auth import hashers
 
 from rest_framework import serializers as rest_framework_serializers
