@@ -1,10 +1,17 @@
-from rest_framework.generics import CreateAPIView
+from rest_framework import generics
+from rest_framework.response import Response
 
-from apps.user import serializers as user_serializers
+from apps.user.serializer import UserSerializer
 
 
-class RegisterApiView(CreateAPIView):
+class RegisterApi(generics.GenericAPIView):
+    serializer_class = UserSerializer
     """
     User registration API
     """
-    serializer_class = user_serializers.UserSerializer
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        user_data = UserSerializer(user, context=self.get_serializer_context()).data
+        return Response(user_data)

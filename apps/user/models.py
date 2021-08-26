@@ -1,25 +1,15 @@
-from django.conf import settings
-from django.core.validators import RegexValidator
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
-
-from rest_framework.authtoken.models import Token as AuthToken
-
-from apps.user import (
-    constants as user_constants,
-    utils as user_utils
-)
-
+from django.utils import timezone
 
 class CustomBase(models.Model):
     """
     Class containing common fields in all models.
     """
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         abstract = True
 
@@ -28,8 +18,7 @@ class UserManager(BaseUserManager):
     """
     Custom User Manager class
     """
-
-    def create_user(self, email, password, is_staff=False, is_admin=False):
+    def create_user(self, email, password, is_staff = False, is_admin = False):
         if not email:
             raise ValueError('Users must have an email address')
 
@@ -47,28 +36,24 @@ class UserManager(BaseUserManager):
         """
         Creates and saves a staff user with the given email and password.
         """
-        return self.create_user(email, password, True, False)
+        return self.create_user(email, password, True, False) 
 
     def create_superuser(self, email, password):
         """
         Creates and saves a superuser with the given email and password.
         """
-        return self.create_user(email, password, True, True)
+        return self.create_user(email, password, True, True) 
 
 
 class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
     """
-    PASSWORD_REGEX = RegexValidator(user_constants.PASSWORD_VALIDATION_REGEX, message=user_constants.PASSWORD_VALIDATION_MESSAGE)
     email = models.EmailField(unique=True, help_text='Email Address', max_length=50)
-    first_name = models.CharField(max_length=50, help_text="First Name of User")
-    last_name = models.CharField(max_length=50, help_text="Last Name of User")
+    first_name = models.CharField(max_length=150, help_text="First Name of User")
+    last_name = models.CharField(max_length=150, help_text="Last Name of User")
     is_staff = models.BooleanField(default=False, help_text="This user can access admin panel")
-    is_admin = models.BooleanField(
-        default=False, help_text="This user has all permissions without explicitly assigning them"
-    )
-    password = models.CharField(max_length=150, validators=[PASSWORD_REGEX])
+    is_admin = models.BooleanField(default=False, help_text="This user has all permissions without explicitly assigning them")
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -93,11 +78,3 @@ class User(AbstractBaseUser, CustomBase):
         "Does the user have permissions to view the app `app_label`?"
         # Simplest possible answer: Yes, always
         return True
-
-
-class Token(AuthToken):
-    """
-    Custom Token Auth Model
-    """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='auth_tokens', on_delete=models.CASCADE)
-    expired_at = models.DateTimeField(default=user_utils.get_expire_date)

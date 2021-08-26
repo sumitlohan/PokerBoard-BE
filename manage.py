@@ -3,7 +3,6 @@ import os
 import sys
 import class_settings
 
-
 def set_settings():
     """
     Set local/production settings according to usage
@@ -11,9 +10,8 @@ def set_settings():
     if(os.path.exists("poker/settings/local.py")):
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.local")
     else:
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.base")
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.production")
     os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'Setting')
-
 
 if __name__ == "__main__":
     set_settings()
