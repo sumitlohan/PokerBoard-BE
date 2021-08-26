@@ -1,8 +1,5 @@
-from django.contrib.auth import hashers, login
-from django.conf import settings
+from django.contrib.auth import hashers
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.template.loader import render_to_string
-from django.utils.translation import gettext as _
 
 from rest_framework import serializers as rest_framework_serializers
 
@@ -45,14 +42,6 @@ class AccountSerializer(rest_framework_serializers.Serializer):
     """
     token = rest_framework_serializers.CharField(max_length=150, write_only=True)
 
-    def to_representation(self, instance):
-        """
-        Custom JSON output response
-        """
-        return {
-            'token': [user_constants.EMAIL_VALIDATION_SUCCESS]
-        }
-
     def validate_token(self, attrs):
         """
         Checking if the token is valid for account activation
@@ -67,6 +56,5 @@ class AccountSerializer(rest_framework_serializers.Serializer):
         Activating user's account
         """
         user.is_account_verified = True
-        user.save()
-        login(self.context['request'], user)
+        user.save(update_fields=["is_account_verified"])
         return user

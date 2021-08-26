@@ -1,7 +1,9 @@
 from rest_framework.generics import CreateAPIView, UpdateAPIView
 
-from apps.user import serializers as user_serializers
-from apps.user import models as user_models
+from apps.user import(
+    serializers as user_serializers,
+    models as user_models
+)
 
 
 class RegisterApiView(CreateAPIView):

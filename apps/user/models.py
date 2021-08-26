@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.core.validators import RegexValidator
-from django.core.mail import send_mail
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.core.validators import RegexValidator
