@@ -74,6 +74,9 @@ class Setting(Settings):
         'DEFAULT_AUTHENTICATION_CLASSES': [
             "apps.user.authentication.CustomTokenAuthentication",
         ],
+        'DEFAULT_PERMISSION_CLASSES': [
+            "rest_framework.permissions.IsAuthenticated",
+        ],
     }
 
     WSGI_APPLICATION = 'poker.wsgi.application'

@@ -45,7 +45,7 @@ class AddGroupMemberSerializer(serializers.Serializer):
         member = GroupUser.objects.filter(user=user, group=group)
         if member:
             raise serializers.ValidationError("A member can't be added to a group twice")
-        attrs.update({"user": user})
+        attrs["user"] = user
         return attrs
 
     def create(self, validated_data):
@@ -60,7 +60,7 @@ class GroupSerializer(serializers.ModelSerializer):
     Group serializer fetching/adding groups
     """
 
-    members = GroupUserSerializer(many=True, required=False)
+    members = GroupUserSerializer(many=True, read_only=False)
 
     class Meta:
         model = Group
