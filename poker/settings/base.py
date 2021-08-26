@@ -22,6 +22,7 @@ class Setting(Settings):
 
     LOCAL_APPS = [
         'apps.user',
+        'apps.pokerboard'
     ]
 
     THIRD_PARTY_APPS = [
