@@ -1,5 +1,6 @@
 from django.contrib.auth import hashers, authenticate
 from django.core import exceptions
+from django.db import models
 from django.template.defaultfilters import first
 from django.contrib.auth import hashers
 
@@ -15,7 +16,7 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
 
     class Meta:
         model = user_models.User
-        fields = ['first_name', 'last_name', 'email', 'password']
+        fields = ['id', 'email', 'first_name', 'last_name', 'password']
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -28,24 +29,15 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         user = super().create(validated_data)
         return user
 
-class LoginSerializer(rest_framework_serializers.ModelSerializer):
-    token = rest_framework_serializers.SerializerMethodField()
-    email = rest_framework_serializers.EmailField()
 
-    class Meta:
-        model = user_models.User
-        fields = ['email', 'password', 'token', 'first_name', 'last_name', 'id']
-        extra_kwargs = {
-            'first_name': {'read_only': True},
-            'last_name': {'read_only': True},
-            'id': {'read_only': True},
-            'password': {'write_only': True}
-        }
+class LoginSerializer(rest_framework_serializers.Serializer):
+    email = rest_framework_serializers.EmailField()
+    password = rest_framework_serializers.CharField()
 
     def validate(self, attrs):
-        '''
+        """
         Validating if user exists with given credentials
-        '''
+        """
         email = attrs.get('email')
         password = attrs.get('password')
 
@@ -61,12 +53,15 @@ class LoginSerializer(rest_framework_serializers.ModelSerializer):
         attrs['user'] = user
         return attrs
 
-    def get_token(self, user):
-        '''
-        Creating token for already registered user
-        '''
-        return user_models.Token.objects.create(user=user).key
 
-    def create(self, validated_data):
-        user = validated_data['user']
-        return user
+class UserTokenSerializer(UserSerializer):
+    token = rest_framework_serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ['token']
+
+    def get_token(self, user):
+        """
+        Creating token for already registered user
+        """
+        return user_models.Token.objects.create(user=user).key
