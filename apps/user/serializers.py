@@ -1,14 +1,15 @@
-from django.contrib.auth import hashers
-from django.contrib.auth import hashers
-from django.contrib.sites.shortcuts import get_current_site
+from django.contrib.auth import hashers, login
+from django.conf import settings
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.template.loader import render_to_string
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
+from django.utils.translation import gettext as _
 
 from rest_framework import serializers as rest_framework_serializers
 
-from apps.user import models as user_models
-from apps.user.utils import TokenGenerator
+from apps.user import(
+    constants as user_constants,
+    models as user_models
+)
 
 
 class UserSerializer(rest_framework_serializers.ModelSerializer):
@@ -36,14 +37,53 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         """
         validated_data['password'] = hashers.make_password(validated_data['password'])
         user = super().create(validated_data)
-        current_site = get_current_site(self.context['request'])
-        account_activation_token = TokenGenerator()
+        account_activation_token = PasswordResetTokenGenerator()
         subject = 'Activate Your Account'
         message = render_to_string('account_activation_email.html', {
             'user': user,
-            'domain': current_site.domain,
-            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'domain': settings.BASE_URL_FE,
+            'uid': user.pk,
             'token': account_activation_token.make_token(user),
         })
-        user.email_user(subject, message)
+        try:
+            user.email_user(subject, message)
+        except:
+            raise rest_framework_serializers.ValidationError('An error occured while sending email')
+        return user
+
+
+class AccountSerializer(rest_framework_serializers.ModelSerializer):
+    """
+    Email verification serializer
+    """
+    token = rest_framework_serializers.CharField(max_length=150, write_only=True)
+
+    class Meta:
+        model = user_models.User
+        fields = ['token']
+
+    def to_representation(self, instance):
+        """
+        Custom JSON output response
+        """
+        return {
+            'token': [user_constants.EMAIL_VALIDATION_SUCCESS]
+        }
+
+    def validate_token(self, attrs):
+        """
+        Checking if the token is valid for account activation
+        """
+        account_activation_token = PasswordResetTokenGenerator()
+        if account_activation_token.check_token(self.instance, attrs):
+            return self.instance
+        raise rest_framework_serializers.ValidationError(user_constants.EMAIL_VALIDATION_ERROR)
+   
+    def update(self, user, validated_data):
+        """
+        Activating user's account
+        """
+        user.is_account_verified = True
+        user.save()
+        login(self.context['request'], user)
         return user
