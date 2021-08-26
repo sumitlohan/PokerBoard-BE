@@ -1,7 +1,7 @@
 from rest_framework import  serializers
 
 from apps.user.models import User
-from apps.user.serializer import UserSerializer
+from apps.user.serializers import UserSerializer
 from apps.group.models import Group, GroupUser
 
 

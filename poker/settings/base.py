@@ -1,5 +1,7 @@
 import os
+
 from class_settings import Settings
+
 
 class Setting(Settings):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -10,25 +12,34 @@ class Setting(Settings):
 
     ALLOWED_HOSTS = []
 
-    INSTALLED_APPS = [
+    DJANGO_APPS = [
         'django.contrib.admin',
         'django.contrib.auth',
         'django.contrib.contenttypes',
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
-        'rest_framework',
-        'rest_framework.authtoken',
+    ]
+
+    LOCAL_APPS = [
         'apps.user',
         'apps.group.app_config.GroupConfig',
-        'corsheaders',
     ]
+
+    THIRD_PARTY_APPS = [
+        'corsheaders',
+        'rest_framework',
+    ]
+
+    INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
     AUTH_USER_MODEL = 'user.User'
 
     CORS_ORIGIN_ALLOW_ALL = True
 
     AUTH_GROUP = None
+
+    TOKEN_TTL = 5
 
     MIDDLEWARE = [
         'django.middleware.security.SecurityMiddleware',
@@ -61,7 +72,7 @@ class Setting(Settings):
 
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
-            'rest_framework.authentication.TokenAuthentication',
+            "apps.user.authentication.CustomTokenAuthentication",
         ],
     }
 
@@ -89,10 +100,9 @@ class Setting(Settings):
         }
     }
 
-
     LANGUAGE_CODE = 'en-us'
 
-    TIME_ZONE = 'UTC'
+    TIME_ZONE = 'Asia/Kolkata'
 
     USE_I18N = True
 
