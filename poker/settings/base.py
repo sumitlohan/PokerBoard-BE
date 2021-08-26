@@ -8,7 +8,7 @@ class Setting(Settings):
 
     SECRET_KEY = 'bf#3+((2_t_-h0nt4k#)5md1rl%8p$o^*!k0+1v_^rb*j36(6g'
 
-    DEBUG = True
+    DEBUG = False
 
     ALLOWED_HOSTS = []
 
@@ -22,7 +22,7 @@ class Setting(Settings):
     ]
 
     LOCAL_APPS = [
-        'apps.user',
+        'apps.user.app_config.UserConfig',
     ]
 
     THIRD_PARTY_APPS = [

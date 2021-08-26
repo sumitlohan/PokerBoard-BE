@@ -1,5 +1,7 @@
-Hello {{first_name}},
-    Thank you for joining poker planner!!
+{% autoescape off %}
+Hi {{ username }},
 
-    Our Best,
-    JTG and the poker planner team
+Please click on the link below to confirm your registration:
+
+http://{{ domain }}/activate/{{ uid }}/{{ token }}
+{% endautoescape %}

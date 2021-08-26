@@ -36,31 +36,14 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         Hashing the password and creating a new user
         """
         validated_data['password'] = hashers.make_password(validated_data['password'])
-        user = super().create(validated_data)
-        account_activation_token = PasswordResetTokenGenerator()
-        subject = 'Activate Your Account'
-        message = render_to_string('account_activation_email.html', {
-            'user': user,
-            'domain': settings.BASE_URL_FE,
-            'uid': user.pk,
-            'token': account_activation_token.make_token(user),
-        })
-        try:
-            user.email_user(subject, message)
-        except:
-            raise rest_framework_serializers.ValidationError('An error occured while sending email')
-        return user
+        return super().create(validated_data)
 
 
-class AccountSerializer(rest_framework_serializers.ModelSerializer):
+class AccountSerializer(rest_framework_serializers.Serializer):
     """
     Email verification serializer
     """
     token = rest_framework_serializers.CharField(max_length=150, write_only=True)
-
-    class Meta:
-        model = user_models.User
-        fields = ['token']
 
     def to_representation(self, instance):
         """
