@@ -21,3 +21,6 @@ class Setting(Setting):
     EMAIL_HOST_PASSWORD = '<Enter Email Password>'
     EMAIL_USE_TLS = False
     EMAIL_USE_SSL = True
+    JIRA_AUTH_TOKEN = "<Enter JIRA AUTH TOKEN>"
+    JIRA_URL = "<Enter Jira URL>"
+
