@@ -15,8 +15,9 @@ class LoginView(CreateAPIView):
     """
     Login API
     """
+    serializer_class = user_serializers.LoginSerializer
+    user_token_serializer = user_serializers.UserTokenSerializer
     def post(self, request):
-        login_serializer = user_serializers.LoginSerializer(data=request.data)
+        login_serializer = self.serializer_class(data=request.data)
         login_serializer.is_valid(raise_exception=True)
-        user_token_serializer = user_serializers.UserTokenSerializer(login_serializer.validated_data['user'])
-        return Response(user_token_serializer.data)
+        return Response(self.user_token_serializer(login_serializer.validated_data['user']).data)

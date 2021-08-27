@@ -1,6 +1,5 @@
-from django.contrib.auth import hashers, authenticate
 from django.core import exceptions
-from django.contrib.auth import hashers
+from django.contrib.auth import hashers, authenticate
 
 from rest_framework import serializers as rest_framework_serializers
 
@@ -29,6 +28,9 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
 
 
 class LoginSerializer(rest_framework_serializers.Serializer):
+    """
+    Validating login credentials
+    """
     email = rest_framework_serializers.EmailField()
     password = rest_framework_serializers.CharField()
 
@@ -40,19 +42,20 @@ class LoginSerializer(rest_framework_serializers.Serializer):
         password = attrs.get('password')
 
         user = authenticate(email=email, password=password)
-        if user:
+        if user: 
             if not user.is_active:
-                msg = 'User account is disabled.'
-                raise exceptions.ValidationError(msg)
+                raise exceptions.ValidationError('User account is disabled.')
         else:
-            msg = 'Unable to log in with provided credentials.'
-            raise exceptions.ValidationError(msg)
+            raise exceptions.ValidationError('Unable to log in with provided credentials.')
 
         attrs['user'] = user
         return attrs
 
 
 class UserTokenSerializer(UserSerializer):
+    """
+    Generating token for already registered user
+    """
     token = rest_framework_serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
