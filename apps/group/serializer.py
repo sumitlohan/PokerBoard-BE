@@ -38,10 +38,9 @@ class AddGroupMemberSerializer(serializers.Serializer):
     def validate(self, attrs):
         email = attrs["email"]
         group = attrs["group"]
-        user_objs = User.objects.filter(email=email)
-        if not user_objs:
+        user = User.objects.filter(email=email).first()
+        if not user:
             raise serializers.ValidationError("No such user")
-        user = user_objs.first()
         member = GroupUser.objects.filter(user=user, group=group)
         if member:
             raise serializers.ValidationError("A member can't be added to a group twice")
