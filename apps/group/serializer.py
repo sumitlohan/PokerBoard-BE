@@ -59,7 +59,7 @@ class GroupSerializer(serializers.ModelSerializer):
     Group serializer fetching/adding groups
     """
 
-    members = GroupUserSerializer(many=True, read_only=False)
+    members = GroupUserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Group
