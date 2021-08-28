@@ -1,5 +1,11 @@
-from apps.pokerboard.models import Pokerboard
+import json
+import requests
+
+from django.conf import settings
+
 from rest_framework import serializers
+
+from apps.pokerboard.models import Pokerboard
 
 
 class PokerboardSerializer(serializers.ModelSerializer):
@@ -24,15 +30,20 @@ class PokerboardSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
-        print(attrs)
-        # TODO : validate tickets by calling api
+        tickets = attrs["tickets"]
+        ticket_ids = json.dumps(tickets)[1:-1]
+        jql = f"issue IN ({ticket_ids})"
+        url = f"{settings.JIRA_URL}search?jql={jql}"
 
+        response = requests.request("GET", url, headers=settings.JIRA_HEADERS)
+        if response.status_code!=200:
+            raise serializers.ValidationError("Invalid ticket")
         return super().validate(attrs)
     
     def create(self, validated_data):
         tickets = validated_data.pop("tickets")
         # TODO : for each ticket code, create a Ticket object
-        
+
         return super().create(validated_data)
 
 
@@ -42,5 +53,3 @@ class CommentSerializer(serializers.Serializer):
     """
     comment = serializers.CharField()
     issue = serializers.SlugField()
-
-

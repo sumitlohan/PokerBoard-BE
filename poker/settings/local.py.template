@@ -23,4 +23,8 @@ class Setting(Setting):
     EMAIL_USE_SSL = True
     JIRA_AUTH_TOKEN = "<Enter JIRA AUTH TOKEN>"
     JIRA_URL = "<Enter Jira URL>"
+    JIRA_HEADERS = {
+        'Authorization': f'Basic {JIRA_AUTH_TOKEN}',
+        'Content-Type': 'application/json',
+    }
 

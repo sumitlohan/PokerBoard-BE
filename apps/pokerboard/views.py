@@ -30,12 +30,6 @@ class PokerboardApiView(ModelViewSet):
         return serializer.save(manager=self.request.user)
 
 
-headers = {
-'Authorization': f'Basic {settings.JIRA_AUTH_TOKEN}',
-'Content-Type': 'application/json',
-}
-
-
 class JqlAPIView(APIView):
     """
     Search By jql
@@ -47,7 +41,7 @@ class JqlAPIView(APIView):
         jql = request.data.get("jql")
         url = f"{settings.JIRA_URL}search?jql={jql}"
 
-        response = requests.request("GET", url, headers=headers)
+        response = requests.request("GET", url, headers=settings.JIRA_HEADERS)
         if response.status_code!=200:
             raise ValidationError("Something went wrong")
         res = json.loads(response.text)
@@ -62,8 +56,8 @@ class SuggestionsAPIView(APIView):
     def get(self, request):
         sprint_url = f"https://kaam-dhandha.atlassian.net/rest/agile/1.0/board/1/sprint"
         project_url = f"{settings.JIRA_URL}jql/autocompletedata/suggestions?fieldName=project"
-        sprint_response = requests.request("GET", sprint_url, headers=headers)
-        project_response = requests.request("GET", project_url, headers=headers)
+        sprint_response = requests.request("GET", sprint_url, headers=settings.JIRA_HEADERS)
+        project_response = requests.request("GET", project_url, headers=settings.JIRA_HEADERS)
         if sprint_response.status_code!=200 or project_response.status_code!=200:
             raise ValidationError("Something went wrong")
         sprint_res = json.loads(sprint_response.text)
@@ -84,16 +78,13 @@ class CommentApiView(CreateAPIView):
         issue = serializer.validated_data["issue"]
         comment = serializer.validated_data["comment"]
         url = f"{settings.JIRA_URL}issue/{issue}/comment"
-        print(url)
         payload = json.dumps({
             "body": comment
         })
         
-        response = requests.request("POST", url, headers=headers, data=payload)
-        print(response)
+        response = requests.request("POST", url, headers=settings.JIRA_HEADERS, data=payload)
         if response.status_code!=201:
             raise ValidationError("Something went wrong")
-
 
 
 """
