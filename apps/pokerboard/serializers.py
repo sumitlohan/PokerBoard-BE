@@ -6,6 +6,7 @@ from django.conf import settings
 from rest_framework import serializers
 
 from apps.pokerboard.models import Pokerboard
+from apps.user.serializers import UserSerializer
 
 
 class PokerboardSerializer(serializers.ModelSerializer):
@@ -13,15 +14,16 @@ class PokerboardSerializer(serializers.ModelSerializer):
     Pokerboard serializer
     """
     tickets = serializers.ListField(child=serializers.SlugField(),write_only=True)
+    manager = UserSerializer(many=False, read_only=True)
 
     class Meta:
         model = Pokerboard
-        fields = ["id", "title", "description", "estimation_type", "duration", "manager", "status", "tickets"]
+        fields = ["id", "title", "description", "estimation_type", "duration", "manager", "status", "tickets", "created_at"]
         extra_kwargs = {
             "id": {
                 "read_only": True
             },
-            "manager": {
+            "created_at": {
                 "read_only": True
             },
             "status": {
