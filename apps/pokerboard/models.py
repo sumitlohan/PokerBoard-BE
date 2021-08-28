@@ -26,3 +26,16 @@ class Pokerboard(CustomBase):
     
     def __str__(self):
         return self.title
+
+
+class Ticket(CustomBase):
+    """
+    Ticket details class
+    """
+    pokerboard = models.ForeignKey(Pokerboard, on_delete=models.CASCADE, help_text="Pokerboard to which ticket belongs")
+    ticket_id = models.SlugField(help_text="Ticket ID imported from JIRA")
+    estimate = models.IntegerField(help_text="Final estimate of ticket")
+    rank = models.IntegerField(help_text="Rank of ticket")
+
+    def __str__(self):
+        return self.ticket_id
