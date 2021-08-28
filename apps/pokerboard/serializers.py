@@ -5,7 +5,7 @@ from django.conf import settings
 
 from rest_framework import serializers
 
-from apps.pokerboard.models import Pokerboard
+from apps.pokerboard.models import Pokerboard, Ticket
 from apps.user.serializers import UserSerializer
 
 
@@ -44,9 +44,12 @@ class PokerboardSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         tickets = validated_data.pop("tickets")
-        # TODO : for each ticket code, create a Ticket object
+        pokerboard = super().create(validated_data)
 
-        return super().create(validated_data)
+        for idx, ticket in enumerate(tickets):
+            Ticket.objects.create(pokerboard=pokerboard, ticket_id=ticket, rank=idx+1)
+
+        return pokerboard
 
 
 class CommentSerializer(serializers.Serializer):

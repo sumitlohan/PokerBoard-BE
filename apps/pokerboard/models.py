@@ -34,7 +34,7 @@ class Ticket(CustomBase):
     """
     pokerboard = models.ForeignKey(Pokerboard, on_delete=models.CASCADE, help_text="Pokerboard to which ticket belongs")
     ticket_id = models.SlugField(help_text="Ticket ID imported from JIRA")
-    estimate = models.IntegerField(help_text="Final estimate of ticket")
+    estimate = models.IntegerField(help_text="Final estimate of ticket", null=True)
     rank = models.IntegerField(help_text="Rank of ticket")
 
     def __str__(self):
