@@ -9,8 +9,7 @@ from apps.group.models import Group
 
 class GroupApi(ModelViewSet):
     """
-    Group API for creating group and get list of groups
-    a user is associated with.
+    Group API for creating group and get list of groups a user is associated with.
     """
     serializer_class = GroupSerializer
 
@@ -18,8 +17,7 @@ class GroupApi(ModelViewSet):
         serializer.save(created_by=self.request.user)
 
     def get_queryset(self):
-        groups = Group.objects.filter(members__user=self.request.user)
-        return groups
+        return Group.objects.filter(members__user=self.request.user)
 
 
 class GroupUserApi(CreateAPIView):
