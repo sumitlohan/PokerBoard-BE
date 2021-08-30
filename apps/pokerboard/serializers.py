@@ -1,4 +1,6 @@
 import json
+from typing import Any
+from typing_extensions import OrderedDict
 import requests
 
 from django.conf import settings
@@ -64,7 +66,7 @@ class CreatePokerboardSerializer(serializers.ModelSerializer):
             },
         }
 
-    def validate(self, attrs):
+    def validate(self: serializers.ModelSerializer, attrs: Any) -> Any:
         tickets = attrs["tickets"]
         ticket_ids = json.dumps(tickets)[1:-1]
         jql = f"issue IN ({ticket_ids})"
@@ -75,7 +77,7 @@ class CreatePokerboardSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid ticket")
         return super().validate(attrs)
     
-    def create(self, validated_data):
+    def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> OrderedDict:
         tickets = validated_data.pop("tickets")
         pokerboard = super().create(validated_data)
 
@@ -103,7 +105,7 @@ class TicketOrderSerializer(serializers.ModelSerializer):
         model = Ticket
         fields = ["direction"]
 
-    def update(self, instance, validated_data):
+    def update(self: serializers.ModelSerializer, instance: Ticket, validated_data: OrderedDict) -> OrderedDict:
         rank = instance.rank
         direction = validated_data["direction"]
         second_rank = rank -1 if direction == "UP" else rank+1
