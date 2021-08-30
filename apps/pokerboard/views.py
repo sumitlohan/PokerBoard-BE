@@ -5,7 +5,6 @@ from django.conf import settings
 
 from rest_framework import status
 from rest_framework.generics import CreateAPIView, UpdateAPIView
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
@@ -17,11 +16,9 @@ from apps.pokerboard.serializers import CreatePokerboardSerializer, PokerboardSe
 
 class PokerboardApiView(ModelViewSet):
     """
-    pokerboard API
+    pokerboard API for getting pokerboard list/details, and creating pokerboard.
     """
     
-    permission_classes = [IsAuthenticated]
-
     def get_serializer_class(self):
         print(self.request.method)
         if self.request.method == "POST":
@@ -76,7 +73,7 @@ class SuggestionsAPIView(APIView):
 
 class CommentApiView(CreateAPIView):
     """
-    Comment on a Ticket
+    Comment on a Ticket on JIRA
     """
     serializer_class = CommentSerializer
     def perform_create(self, serializer):

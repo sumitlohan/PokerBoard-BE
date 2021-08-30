@@ -1,5 +1,4 @@
 import json
-from django.db import models
 import requests
 
 from django.conf import settings
@@ -12,7 +11,7 @@ from apps.user.serializers import UserSerializer
 
 class TicketSerializer(serializers.ModelSerializer):
     """
-    Pokerboard serializer
+    Ticket serializer for displaing ticket details
     """
     class Meta:
         model = Ticket
@@ -21,7 +20,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
 class PokerboardSerializer(serializers.ModelSerializer):
     """
-    Pokerboard serializer
+    Pokerboard serializer for displaying/retrieving pokerboards
     """
     tickets = TicketSerializer(many=True, read_only=True)
     manager = UserSerializer(many=False, read_only=True)
@@ -41,29 +40,11 @@ class PokerboardSerializer(serializers.ModelSerializer):
             },
         }
 
-    def validate(self, attrs):
-        tickets = attrs["tickets"]
-        ticket_ids = json.dumps(tickets)[1:-1]
-        jql = f"issue IN ({ticket_ids})"
-        url = f"{settings.JIRA_URL}search?jql={jql}"
-
-        response = requests.request("GET", url, headers=settings.JIRA_HEADERS)
-        if response.status_code!=200:
-            raise serializers.ValidationError("Invalid ticket")
-        return super().validate(attrs)
-    
-    def create(self, validated_data):
-        tickets = validated_data.pop("tickets")
-        pokerboard = super().create(validated_data)
-
-        for idx, ticket in enumerate(tickets):
-            Ticket.objects.create(pokerboard=pokerboard, ticket_id=ticket, rank=idx+1)
-
-        return pokerboard
 
 class CreatePokerboardSerializer(serializers.ModelSerializer):
     """
-    Pokerboard serializer
+    Create Pokerboard serializer which requires a list of tickets and
+    validate them by calling an api, creates Ticket objects for the same.
     """
     tickets = serializers.ListField(child=serializers.SlugField(), write_only=True)
     manager = UserSerializer(many=False, read_only=True)
@@ -113,6 +94,9 @@ class CommentSerializer(serializers.Serializer):
 
 
 class TicketOrderSerializer(serializers.ModelSerializer):
+    """
+    Ticket order serializer for moving tickets UP and DOWN in ranks.
+    """
     direction = serializers.CharField()
 
     class Meta:
