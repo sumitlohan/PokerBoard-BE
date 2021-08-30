@@ -4,15 +4,15 @@ import requests
 from django.conf import settings
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from apps.pokerboard.models import Pokerboard
-from apps.pokerboard.serializers import PokerboardSerializer, CommentSerializer
+from apps.pokerboard.models import Pokerboard, Ticket
+from apps.pokerboard.serializers import CreatePokerboardSerializer, PokerboardSerializer, CommentSerializer, TicketOrderSerializer
 
 
 class PokerboardApiView(ModelViewSet):
@@ -20,8 +20,13 @@ class PokerboardApiView(ModelViewSet):
     pokerboard API
     """
     
-    serializer_class = PokerboardSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        print(self.request.method)
+        if self.request.method == "POST":
+            return CreatePokerboardSerializer
+        return PokerboardSerializer
 
     def get_queryset(self):
         return Pokerboard.objects.filter(manager=self.request.user)
@@ -38,7 +43,7 @@ class JqlAPIView(APIView):
     Get issues from issues Id's list - issues IN ("KD-1", "KD-2")
     """
     def get(self, request):
-        jql = request.data.get("jql")
+        jql = request.GET.get("jql")
         url = f"{settings.JIRA_URL}search?jql={jql}"
 
         response = requests.request("GET", url, headers=settings.JIRA_HEADERS)
@@ -87,8 +92,6 @@ class CommentApiView(CreateAPIView):
             raise ValidationError("Something went wrong")
 
 
-"""
-TODO:
-
-Given ticket Id's, Create ticket objects
-"""
+class TicketOrderApiView(UpdateAPIView):
+    serializer_class = TicketOrderSerializer
+    queryset = Ticket.objects.all()
