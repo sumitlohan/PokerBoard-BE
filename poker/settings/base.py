@@ -1,4 +1,5 @@
 import os
+
 from class_settings import Settings
 
 
@@ -23,6 +24,7 @@ class Setting(Settings):
     LOCAL_APPS = [
         'apps.user',
         'apps.pokerboard',
+        'apps.group.app_config.GroupConfig',
     ]
 
     THIRD_PARTY_APPS = [
@@ -72,6 +74,9 @@ class Setting(Settings):
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
             "apps.user.authentication.CustomTokenAuthentication",
+        ],
+        'DEFAULT_PERMISSION_CLASSES': [
+            "rest_framework.permissions.IsAuthenticated",
         ],
     }
 
