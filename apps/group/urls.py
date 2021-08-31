@@ -2,11 +2,11 @@ from django.urls import path
 
 from rest_framework import routers
 
-from apps.group.views import GroupApi, GroupUserApi
+import apps.group.views as group_views
 
 router = routers.SimpleRouter(trailing_slash=False)
-router.register(r'', GroupApi, basename="groups")
+router.register(r'', group_views.GroupViewset, basename="groups")
 
 urlpatterns = [
-      path('create-members', GroupUserApi.as_view())
+      path('create-members', group_views.GroupUserApi.as_view())
 ] + router.urls

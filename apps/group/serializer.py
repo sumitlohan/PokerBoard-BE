@@ -1,57 +1,53 @@
-from rest_framework import  serializers
+from rest_framework import serializers
 
-from apps.user.models import User
-from apps.user.serializers import UserSerializer
-from apps.group.models import Group, GroupUser
+import apps.user.models as user_models
+import apps.user.serializers as user_serializers
+import apps.group.models as group_models
 
 
 class GroupUserSerializer(serializers.ModelSerializer):
     """
     Group serializer for adding group members
     """
-    user = UserSerializer(many=False)
+    user = user_serializers.UserSerializer()
 
-    class Meta:  
-        model = GroupUser
+    class Meta:
+        model = group_models.GroupUser
         fields = ['id', 'user', 'group', 'created_at', 'updated_at']
-        kwargs = {
-            'id': {
-                'read_only': True,
-            },
-            'created_at': {
-                'read_only': True
-            },
-            'updated_at': {
-                'read_only': True
-            },
-        }
 
 
 class AddGroupMemberSerializer(serializers.Serializer):
     """
     Serializer for adding group member
     """
-    user = UserSerializer(many=False, read_only=True)
+    user = user_serializers.UserSerializer(read_only=True)
     email = serializers.EmailField(write_only=True)
-    group = serializers.PrimaryKeyRelatedField(queryset=Group.objects.only("id"))
+    group = serializers.PrimaryKeyRelatedField(queryset=group_models.Group.objects.only("id"))
 
     def validate(self, attrs):
+        """
+        Checks if user with given email exists or not.
+        If exists, check if the user has already been added to the group.
+        """
         email = attrs["email"]
         group = attrs["group"]
-        user = User.objects.filter(email=email).first()
+        user = user_models.User.objects.filter(email=email).first()
         if not user:
             raise serializers.ValidationError("No such user")
-        member = GroupUser.objects.filter(user=user, group=group)
+        member = group_models.GroupUser.objects.filter(user=user, group=group)
         if member:
             raise serializers.ValidationError("A member can't be added to a group twice")
         attrs["user"] = user
         return attrs
 
     def create(self, validated_data):
+        """
+        Creates group user object
+        """
         group = validated_data["group"]
         user = validated_data["user"]
-        GroupUser.objects.create(user=user, group=group)
-        return validated_data
+        instance = group_models.GroupUser.objects.create(user=user, group=group)
+        return instance
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -62,19 +58,13 @@ class GroupSerializer(serializers.ModelSerializer):
     members = GroupUserSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Group
+        model = group_models.Group
         fields = ['id', 'name', 'members', 'created_by', 'created_at', 'updated_at']
         extra_kwargs = {
             'id': {
                 'read_only': True,
             },
             'created_by': {
-                'read_only': True,
-            },
-            'created_at': {
-                'read_only': True,
-            },
-            'updated_at': {
                 'read_only': True,
             },
         }
