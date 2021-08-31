@@ -14,9 +14,9 @@ class Group(user_models.CustomBase):
         return self.name
 
 
-class GroupUser(user_models.CustomBase):
+class GroupMember(user_models.CustomBase):
     """
-    GroupUser model for storing membership details
+    GroupMember model for storing membership details
     """
     user = models.ForeignKey(user_models.User, related_name="groups", on_delete=models.CASCADE)
     group = models.ForeignKey(Group, related_name="members", on_delete=models.CASCADE)

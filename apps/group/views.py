@@ -25,7 +25,7 @@ class GroupViewset(ModelViewSet):
         return group_models.Group.objects.filter(members__user=self.request.user)
 
 
-class GroupUserApi(CreateAPIView):
+class GroupMemberApi(CreateAPIView):
     """
     Group user API for adding group member
     """

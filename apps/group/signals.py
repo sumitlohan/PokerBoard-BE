@@ -8,4 +8,4 @@ def create_default_group_member(**kwargs):
     instance = kwargs.get('instance')
     created = kwargs.get('created')
     if created:
-        group_models.GroupUser.objects.create(user=instance.created_by, group=instance)
+        group_models.GroupMember.objects.create(user=instance.created_by, group=instance)

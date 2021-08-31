@@ -5,14 +5,14 @@ import apps.user.serializers as user_serializers
 import apps.group.models as group_models
 
 
-class GroupUserSerializer(serializers.ModelSerializer):
+class GroupMemberSerializer(serializers.ModelSerializer):
     """
     Group serializer for adding group members
     """
     user = user_serializers.UserSerializer()
 
     class Meta:
-        model = group_models.GroupUser
+        model = group_models.GroupMember
         fields = ['id', 'user', 'group', 'created_at', 'updated_at']
 
 
@@ -34,7 +34,7 @@ class AddGroupMemberSerializer(serializers.Serializer):
         user = user_models.User.objects.filter(email=email).first()
         if not user:
             raise serializers.ValidationError("No such user")
-        member = group_models.GroupUser.objects.filter(user=user, group=group)
+        member = group_models.GroupMember.objects.filter(user=user, group=group)
         if member:
             raise serializers.ValidationError("A member can't be added to a group twice")
         attrs["user"] = user
@@ -46,7 +46,7 @@ class AddGroupMemberSerializer(serializers.Serializer):
         """
         group = validated_data["group"]
         user = validated_data["user"]
-        instance = group_models.GroupUser.objects.create(user=user, group=group)
+        instance = group_models.GroupMember.objects.create(user=user, group=group)
         return instance
 
 
@@ -55,7 +55,7 @@ class GroupSerializer(serializers.ModelSerializer):
     Group serializer fetching/adding groups
     """
 
-    members = GroupUserSerializer(many=True, read_only=True)
+    members = GroupMemberSerializer(many=True, read_only=True)
 
     class Meta:
         model = group_models.Group
