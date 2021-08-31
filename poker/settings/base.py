@@ -22,7 +22,7 @@ class Setting(Settings):
     ]
 
     LOCAL_APPS = [
-        'apps.user',
+        'apps.user.app_config.UserConfig',
     ]
 
     THIRD_PARTY_APPS = [
