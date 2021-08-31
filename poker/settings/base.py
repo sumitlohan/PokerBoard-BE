@@ -25,7 +25,7 @@ class Setting(Settings):
         'apps.pokerboard',
         'apps.group.app_config.GroupConfig',
         'apps.user.app_config.UserConfig',
-        'apps.invite',
+        'apps.invite.app_config.InviteConfig',
     ]
 
     THIRD_PARTY_APPS = [
