@@ -1,23 +1,23 @@
 import json
 from typing import Any
 from typing_extensions import OrderedDict
-import requests
 
 from django.conf import settings
 
 from rest_framework import serializers
 
-from apps.pokerboard.models import Pokerboard, Ticket
-from apps.user.serializers import UserSerializer
-
+import apps.pokerboard.models as pokerboard_models
+import apps.pokerboard.utils as pokerbord_utils
+import apps.user.serializers as user_serializers
 
 class TicketSerializer(serializers.ModelSerializer):
     """
     Ticket serializer for displaing ticket details
     """
+
     class Meta:
-        model = Ticket
-        fields = "__all__"
+        model = pokerboard_models.Ticket
+        fields = ["id", "ticket_id", "pokerboard", "estimate", "rank"]
 
 
 class PokerboardSerializer(serializers.ModelSerializer):
@@ -25,64 +25,51 @@ class PokerboardSerializer(serializers.ModelSerializer):
     Pokerboard serializer for displaying/retrieving pokerboards
     """
     tickets = TicketSerializer(many=True, read_only=True)
-    manager = UserSerializer(many=False, read_only=True)
+    manager = user_serializers.UserSerializer(read_only=True)
 
     class Meta:
-        model = Pokerboard
+        model = pokerboard_models.Pokerboard
         fields = ["id", "title", "description", "estimation_type", "duration", "manager", "status", "tickets", "created_at"]
-        extra_kwargs = {
-            "id": {
-                "read_only": True
-            },
-            "created_at": {
-                "read_only": True
-            },
-            "status": {
-                "read_only": True
-            },
-        }
 
 
-class CreatePokerboardSerializer(serializers.ModelSerializer):
+class CreatePokerboardSerializer(PokerboardSerializer):
     """
     Create Pokerboard serializer which requires a list of tickets and
     validate them by calling an api, creates Ticket objects for the same.
     """
     tickets = serializers.ListField(child=serializers.SlugField(), write_only=True)
-    manager = UserSerializer(many=False, read_only=True)
 
-    class Meta:
-        model = Pokerboard
-        fields = ["id", "title", "description", "estimation_type", "duration", "manager", "status", "tickets", "created_at"]
+    class Meta(PokerboardSerializer.Meta):
         extra_kwargs = {
-            "id": {
-                "read_only": True
-            },
-            "created_at": {
-                "read_only": True
-            },
             "status": {
                 "read_only": True
             },
         }
 
     def validate(self: serializers.ModelSerializer, attrs: Any) -> Any:
+        """
+        Validates list of tickets by calling an API
+        """
         tickets = attrs["tickets"]
         ticket_ids = json.dumps(tickets)[1:-1]
         jql = f"issue IN ({ticket_ids})"
         url = f"{settings.JIRA_URL}search?jql={jql}"
 
-        response = requests.request("GET", url, headers=settings.JIRA_HEADERS)
-        if response.status_code!=200:
-            raise serializers.ValidationError("Invalid ticket")
+        response = pokerbord_utils.query_jira("GET", url)
+        request = self.context.get("request")
+        manager = request.user
+        attrs["manager"] = manager
         return super().validate(attrs)
     
     def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> OrderedDict:
+        """
+        Creates Pokerboard object and list of Ticket objects
+        """
         tickets = validated_data.pop("tickets")
         pokerboard = super().create(validated_data)
 
         for idx, ticket in enumerate(tickets):
-            Ticket.objects.create(pokerboard=pokerboard, ticket_id=ticket, rank=idx+1)
+            pokerboard_models.Ticket.objects.create(pokerboard=pokerboard, ticket_id=ticket, rank=idx+1)
 
         return pokerboard
 
@@ -102,14 +89,17 @@ class TicketOrderSerializer(serializers.ModelSerializer):
     direction = serializers.CharField()
 
     class Meta:
-        model = Ticket
+        model = pokerboard_models.Ticket
         fields = ["direction"]
 
-    def update(self: serializers.ModelSerializer, instance: Ticket, validated_data: OrderedDict) -> OrderedDict:
+    def update(self: serializers.ModelSerializer, instance: pokerboard_models.Ticket, validated_data: OrderedDict) -> OrderedDict:
+        """
+        Updates the rank of a ticket
+        """
         rank = instance.rank
         direction = validated_data["direction"]
         second_rank = rank -1 if direction == "UP" else rank+1
-        second_ticket = Ticket.objects.filter(pokerboard=instance.pokerboard, rank=second_rank).first()
+        second_ticket = pokerboard_models.Ticket.objects.filter(pokerboard=instance.pokerboard, rank=second_rank).first()
         if not second_ticket:
             raise serializers.ValidationError(f"Can't go {direction}")
         second_ticket.rank = rank
@@ -117,4 +107,3 @@ class TicketOrderSerializer(serializers.ModelSerializer):
         second_ticket.save()
         instance.save()
         return validated_data
-
