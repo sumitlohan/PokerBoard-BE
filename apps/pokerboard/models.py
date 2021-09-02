@@ -1,12 +1,12 @@
 from django.db import models
 
-from apps.user.models import CustomBase, User
+import apps.user.models as user_models
 
 
-class Pokerboard(CustomBase):
-    '''
+class Pokerboard(user_models.CustomBase):
+    """
     Pokerboard settings class
-    '''
+    """
     ESTIMATION_CHOICES = (
         ("SERIES", "Series"),
         ("EVEN", "Even"),
@@ -17,7 +17,7 @@ class Pokerboard(CustomBase):
         ("STARTED", "Started"),
         ("ENDED", "Ended")
     )
-    manager = models.ForeignKey(User, on_delete=models.CASCADE, help_text='Owner of Pokerboard')
+    manager = models.ForeignKey(user_models.User, on_delete=models.CASCADE, help_text='Owner of Pokerboard')
     title = models.CharField(unique=True, max_length=20, help_text='Name of Pokerboard')
     description = models.CharField(max_length=100, help_text='Description')
     estimation_type = models.CharField(choices=ESTIMATION_CHOICES, max_length=20, help_text='Estimation type', default="SERIES")
@@ -28,13 +28,13 @@ class Pokerboard(CustomBase):
         return self.title
 
 
-class Ticket(CustomBase):
+class Ticket(user_models.CustomBase):
     """
     Ticket details class
     """
-    pokerboard = models.ForeignKey(Pokerboard, on_delete=models.CASCADE, help_text="Pokerboard to which ticket belongs")
+    pokerboard = models.ForeignKey(Pokerboard, related_name="tickets", on_delete=models.CASCADE, help_text="Pokerboard to which ticket belongs")
     ticket_id = models.SlugField(help_text="Ticket ID imported from JIRA")
-    estimate = models.IntegerField(help_text="Final estimate of ticket", null=True)
+    estimate = models.IntegerField(null=True, help_text="Final estimate of ticket")
     rank = models.IntegerField(help_text="Rank of ticket")
 
     def __str__(self):

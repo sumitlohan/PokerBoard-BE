@@ -2,14 +2,14 @@ from django.urls import path
 
 from rest_framework.routers import SimpleRouter
 
-from apps.pokerboard.views import JqlAPIView, SuggestionsAPIView, PokerboardApiView, CommentApiView
+import apps.pokerboard.views as pokerboard_views
 
 router = SimpleRouter(trailing_slash=False)
-router.register('',PokerboardApiView, basename="pokerboards")
+router.register('',pokerboard_views.PokerboardApiView, basename="pokerboards")
 
 urlpatterns = [
-    path("jql", JqlAPIView.as_view()),
-    path("comment", CommentApiView.as_view()),
-    path("suggestions", SuggestionsAPIView.as_view()),
-
+    path("jql", pokerboard_views.JqlAPIView.as_view()),
+    path("comment", pokerboard_views.CommentApiView.as_view()),
+    path("suggestions", pokerboard_views.SuggestionsAPIView.as_view()),
+    path("tickets/<int:pk>", pokerboard_views.TicketOrderApiView.as_view()),
 ] + router.urls

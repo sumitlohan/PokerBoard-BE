@@ -1,33 +1,43 @@
 import json
-import requests
+from typing import Any
+from typing_extensions import OrderedDict
 
 from django.conf import settings
+from django.db.models.query import QuerySet
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
+from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from apps.pokerboard.models import Pokerboard
-from apps.pokerboard.serializers import PokerboardSerializer, CommentSerializer
+import apps.pokerboard.constants as pokerboard_constants 
+import apps.pokerboard.models as pokerboard_models
+import apps.pokerboard.serializers as pokerboard_serializers
+import apps.pokerboard.utils as pokerboard_utils 
 
 
 class PokerboardApiView(ModelViewSet):
     """
-    pokerboard API
+    Pokerboard API for getting pokerboard list/details, and creating pokerboard.
     """
-    
-    serializer_class = PokerboardSerializer
-    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return Pokerboard.objects.filter(manager=self.request.user)
+    http_method_names = ["get", "post"]
     
-    def perform_create(self, serializer):
-        return serializer.save(manager=self.request.user)
+    def get_serializer_class(self: ModelViewSet) -> Serializer:
+        """
+        Get serializer class based on request's method
+        """
+        if self.request.method == "POST":
+            return pokerboard_serializers.CreatePokerboardSerializer
+        return pokerboard_serializers.PokerboardSerializer
+
+    def get_queryset(self: ModelViewSet) -> QuerySet:
+        """
+        Get pokerboards a user can access
+        """
+        return pokerboard_models.Pokerboard.objects.filter(manager=self.request.user).prefetch_related("tickets")
 
 
 class JqlAPIView(APIView):
@@ -37,31 +47,27 @@ class JqlAPIView(APIView):
     Get issues for a sprint - sprint IN ("sprint-name")
     Get issues from issues Id's list - issues IN ("KD-1", "KD-2")
     """
-    def get(self, request):
-        jql = request.data.get("jql")
+    def get(self: APIView, request: OrderedDict) -> Response:
+        """
+        Fetch JQL response given a JQL statement
+        """
+        jql = request.GET.get("jql")
         url = f"{settings.JIRA_URL}search?jql={jql}"
 
-        response = requests.request("GET", url, headers=settings.JIRA_HEADERS)
-        if response.status_code!=200:
-            raise ValidationError("Something went wrong")
-        res = json.loads(response.text)
+        res = pokerboard_utils.query_jira("GET", url)
         return Response(res, status=status.HTTP_200_OK)
-
 
 
 class SuggestionsAPIView(APIView):
     """
     Get projects and sprints list from JIRA
     """
-    def get(self, request):
-        sprint_url = f"https://kaam-dhandha.atlassian.net/rest/agile/1.0/board/1/sprint"
-        project_url = f"{settings.JIRA_URL}jql/autocompletedata/suggestions?fieldName=project"
-        sprint_response = requests.request("GET", sprint_url, headers=settings.JIRA_HEADERS)
-        project_response = requests.request("GET", project_url, headers=settings.JIRA_HEADERS)
-        if sprint_response.status_code!=200 or project_response.status_code!=200:
-            raise ValidationError("Something went wrong")
-        sprint_res = json.loads(sprint_response.text)
-        project_res = json.loads(project_response.text)
+    def get(self: APIView, request: OrderedDict) -> Response:
+        """
+        Fetch available sprints and projects
+        """
+        sprint_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_SPRINTS)
+        project_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_PROJECTS)
         response = {
             "projects": project_res["results"],
             "sprints": sprint_res["values"]
@@ -71,10 +77,13 @@ class SuggestionsAPIView(APIView):
 
 class CommentApiView(CreateAPIView):
     """
-    Comment on a Ticket
+    Comment on a Ticket on JIRA
     """
-    serializer_class = CommentSerializer
-    def perform_create(self, serializer):
+    serializer_class = pokerboard_serializers.CommentSerializer
+    def perform_create(self: CreateAPIView, serializer: Serializer) -> Any:
+        """
+        Comments on a JIRA ticket
+        """
         issue = serializer.validated_data["issue"]
         comment = serializer.validated_data["comment"]
         url = f"{settings.JIRA_URL}issue/{issue}/comment"
@@ -82,13 +91,12 @@ class CommentApiView(CreateAPIView):
             "body": comment
         })
         
-        response = requests.request("POST", url, headers=settings.JIRA_HEADERS, data=payload)
-        if response.status_code!=201:
-            raise ValidationError("Something went wrong")
+        response = pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
 
 
-"""
-TODO:
-
-Given ticket Id's, Create ticket objects
-"""
+class TicketOrderApiView(UpdateAPIView):
+    """
+    Ticket order API for ordering tickets
+    """
+    serializer_class = pokerboard_serializers.TicketOrderSerializer
+    queryset = pokerboard_models.Ticket.objects.all()
