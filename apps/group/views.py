@@ -1,9 +1,7 @@
 from rest_framework.generics import CreateAPIView
 from rest_framework.viewsets import ModelViewSet
 
-import apps.group.serializer as group_serializers
-import apps.group.permissions as group_permissions
-import apps.group.models as group_models
+from apps.group import serializer as group_serializers, permissions as group_permissions, models as group_models
 
 
 class GroupViewset(ModelViewSet):

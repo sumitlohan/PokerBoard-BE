@@ -8,5 +8,5 @@ router = routers.SimpleRouter(trailing_slash=False)
 router.register(r'', group_views.GroupViewset, basename="groups")
 
 urlpatterns = [
-      path('create-members', group_views.GroupMemberApi.as_view())
+    path('create-members', group_views.GroupMemberApi.as_view())
 ] + router.urls
