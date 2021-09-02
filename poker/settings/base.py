@@ -22,8 +22,8 @@ class Setting(Settings):
     ]
 
     LOCAL_APPS = [
-        'apps.user',
         'apps.group.app_config.GroupConfig',
+        'apps.user.app_config.UserConfig',
     ]
 
     THIRD_PARTY_APPS = [
