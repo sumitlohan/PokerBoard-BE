@@ -8,7 +8,7 @@ from apps.invite.permissions import IsManagerPermission
 
 class InviteUserApi(CreateAPIView):
     """
-    Group user API for adding group member
+    API for inviting user to pokerboard
     """
     serializer_class = InviteUserSerializer
     permission_classes = [IsManagerPermission]

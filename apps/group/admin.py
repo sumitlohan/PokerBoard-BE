@@ -1,8 +1,7 @@
 from django.contrib import admin
 
-from apps.group.models import Group, GroupUser
+import apps.group.models as group_members
 
 
-admin.site.register(Group)
-admin.site.register(GroupUser)
-
+admin.site.register(group_members.Group)
+admin.site.register(group_members.GroupMember)

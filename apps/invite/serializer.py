@@ -2,7 +2,7 @@ from apps import invite
 from rest_framework import  serializers
 
 from apps.invite.models import Invite
-from apps.group.models import Group, GroupUser
+from apps.group.models import Group, GroupMember
 
         
 
@@ -52,7 +52,7 @@ class InviteUserSerializer(serializers.ModelSerializer):
             Invite.objects.create(pokerboard=pokerboard, invitee=invitee, role=role)
         else:
             group = validated_data['group']
-            members = GroupUser.objects.filter(group=group)
+            members = GroupMember.objects.filter(group=group)
             for member in members:
-                Invite.objects.create(invitee=member.user, pokerboard=pokerboard, group=group, role=role)
+                Invite.objects.create(invitee=str(member.user), pokerboard=pokerboard, group=group, role=role)
         return validated_data

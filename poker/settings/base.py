@@ -22,10 +22,10 @@ class Setting(Settings):
     ]
 
     LOCAL_APPS = [
-        'apps.user',
         'apps.group.app_config.GroupConfig',
         'apps.invite.app_config.InviteConfig',
         'apps.pokerboard',
+        'apps.user.app_config.UserConfig',
     ]
 
     THIRD_PARTY_APPS = [

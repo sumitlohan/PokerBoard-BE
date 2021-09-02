@@ -1,35 +1,41 @@
 from rest_framework.generics import CreateAPIView
-
 from rest_framework.viewsets import ModelViewSet
 
-from apps.group.serializer import AddGroupMemberSerializer, GroupSerializer
-from apps.group.permissions import IsGroupAdminPermission
-from apps.group.models import Group
+import apps.group.serializer as group_serializers
+import apps.group.permissions as group_permissions
+import apps.group.models as group_models
 
 
-class GroupApi(ModelViewSet):
+class GroupViewset(ModelViewSet):
     """
-    Group API for creating group and get list of groups
-    a user is associated with.
+    Group API for creating group and get list of groups a user is associated with.
     """
-    serializer_class = GroupSerializer
+    serializer_class = group_serializers.GroupSerializer
 
     def perform_create(self, serializer):
+        """
+        Saves serializer and injects created_by property as current user
+        """
         serializer.save(created_by=self.request.user)
 
     def get_queryset(self):
-        groups = Group.objects.filter(members__user=self.request.user)
-        return groups
+        """
+        Gets groups list in which current user is a member.
+        """
+        return group_models.Group.objects.filter(members__user=self.request.user)
 
 
-class GroupUserApi(CreateAPIView):
+class GroupMemberApi(CreateAPIView):
     """
     Group user API for adding group member
     """
-    serializer_class = AddGroupMemberSerializer
-    permission_classes = [IsGroupAdminPermission]
+    serializer_class = group_serializers.AddGroupMemberSerializer
+    permission_classes = [group_permissions.IsGroupAdminPermission]
 
     def perform_create(self, serializer):
+        """
+        Adds a member to group, checks current user permission.
+        """
         group = serializer.validated_data["group"]
         self.check_object_permissions(self.request, group)
         serializer.save()
