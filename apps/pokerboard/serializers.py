@@ -67,10 +67,9 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         """
         tickets = validated_data.pop("tickets")
         pokerboard = super().create(validated_data)
-
-        for idx, ticket in enumerate(tickets):
-            pokerboard_models.Ticket.objects.create(pokerboard=pokerboard, ticket_id=ticket, rank=idx+1)
-
+        pokerboard_models.Ticket.objects.bulk_create(
+            [pokerboard_models.Ticket(pokerboard=pokerboard, ticket_id=ticket, rank=idx+1) for idx, ticket in enumerate(tickets)]
+        )
         return pokerboard
 
 

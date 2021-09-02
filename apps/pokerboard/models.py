@@ -4,9 +4,9 @@ import apps.user.models as user_models
 
 
 class Pokerboard(user_models.CustomBase):
-    '''
+    """
     Pokerboard settings class
-    '''
+    """
     ESTIMATION_CHOICES = (
         ("SERIES", "Series"),
         ("EVEN", "Even"),
