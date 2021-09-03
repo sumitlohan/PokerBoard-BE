@@ -6,7 +6,7 @@ from django.conf import settings
 from django.db.models.query import QuerySet
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, UpdateAPIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
@@ -102,9 +102,14 @@ class TicketOrderApiView(UpdateAPIView):
     queryset = pokerboard_models.Ticket.objects.all()
 
 
-class GameSessionApi(CreateAPIView):
+class GameSessionApi(CreateAPIView, RetrieveAPIView):
     """
     Game session API for creating game and fetching active game session
     """
     serializer_class = pokerboard_serializers.GameSessionSerializer
     queryset = pokerboard_models.GameSession.objects.all()
+
+    def get_object(self):
+        pk = self.kwargs.get('pk')
+        active_gamesession = self.queryset.filter(ticket__pokerboard=pk, status=pokerboard_models.GameSession.IN_PROGRESS).first()
+        return active_gamesession

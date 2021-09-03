@@ -8,6 +8,7 @@ from rest_framework import serializers
 
 import apps.pokerboard.models as pokerboard_models
 import apps.pokerboard.utils as pokerbord_utils
+from apps.pokerboard.constants import MESSAGE_TYPES
 import apps.user.serializers as user_serializers
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -107,10 +108,21 @@ class TicketOrderSerializer(serializers.ModelSerializer):
         instance.save()
         return validated_data
 
+class VoteSerializer(serializers.ModelSerializer):
+    user = user_serializers.UserSerializer(read_only=True)
+    class Meta:
+        model = pokerboard_models.Vote
+        fields = ["estimate", "game_session", "id", "user"]
+        extra_kwargs = {
+            "game_session": {
+                "read_only": True
+            }
+        }
 
 class GameSessionSerializer(serializers.ModelSerializer):
     ticket = serializers.PrimaryKeyRelatedField(queryset=pokerboard_models.Ticket.objects.only("id"))
     status = serializers.ChoiceField(choices=pokerboard_models.GameSession.STATUS_CHOICES, required=False)
+    
     class Meta:
         model = pokerboard_models.GameSession
         fields = ["id", "ticket", "status", "timer_started_at"]
@@ -120,8 +132,19 @@ class GameSessionSerializer(serializers.ModelSerializer):
             }
         }
 
+    def validate_ticket(self, attrs):
+        attrs = super().validate_ticket(attrs)
+        active_sessions = pokerboard_models.GameSession.objects.filter(ticket__pokerboard=attrs.pokerboard, status=pokerboard_models.GameSession.IN_PROGRESS).count()
+        if active_sessions > 0:
+            raise serializers.ValidationError("An active game session already exists for this pokerboard")
+        return attrs
+
     def create(self, validated_data):
         validated_data["status"] = pokerboard_models.GameSession.IN_PROGRESS
         validated_data["timer_started_at"] = None
         return super().create(validated_data)
     
+
+class MessageSerializer(serializers.Serializer):
+    message_type = serializers.ChoiceField(choices=MESSAGE_TYPES)
+    message = serializers.OrderedDict()

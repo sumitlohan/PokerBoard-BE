@@ -12,5 +12,6 @@ urlpatterns = [
     path("comment", pokerboard_views.CommentApiView.as_view()),
     path("suggestions", pokerboard_views.SuggestionsAPIView.as_view()),
     path("game", pokerboard_views.GameSessionApi.as_view()),
+    path("game/<int:pk>", pokerboard_views.GameSessionApi.as_view()),
     path("tickets/<int:pk>", pokerboard_views.TicketOrderApiView.as_view()),
 ] + router.urls

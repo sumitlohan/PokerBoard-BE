@@ -1,49 +1,104 @@
 import json
-from asgiref.sync import async_to_sync
-from channels.generic.websocket import AsyncWebsocketConsumer
 
+from django.contrib.auth.models import AnonymousUser
+from django.db.utils import IntegrityError
+
+from channels.generic.websocket import AsyncWebsocketConsumer
+from rest_framework import serializers
+
+from apps.pokerboard import (
+    models as pokerboard_models,
+    serializers as pokerboard_serializers,
+)
 
 class SessionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print(self.scope["user"])
-        # self.
-        self.room_name = str(self.scope['url_route']['kwargs']['pk'])
-        self.room_group_name = 'chat_%s' % self.room_name
+        session_id = self.scope['url_route']['kwargs']['pk']
+        self.room_name = str(session_id)
+        self.room_group_name = 'session_%s' % self.room_name
+        session = pokerboard_models.GameSession.objects.get(id=session_id)
+        self.session = session
 
         # Join room group
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-
+        if type(self.scope["user"]) == AnonymousUser or session.status != pokerboard_models.GameSession.IN_PROGRESS:
+            await self.close()
         await self.accept()
-    
-    async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json['message']
 
-        # Send message to room group
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'message': message
-            }
-        )
+    async def estimate(self, event):
+        manager = self.session.ticket.pokerboard.manager
+        if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
+            self.session.status = pokerboard_models.GameSession.ESTIMATED
+            self.session.save()
+            self.session.ticket.estimate = event["message"]["estimate"]
+            # TODO: call JIRA api and set estimate
+            self.session.ticket.save()
+            await self.send(text_data=json.dumps({
+                "type": event["type"],
+                "estimate": event["message"]["estimate"]
+            }))
+
+    async def skip(self, event):
+        manager = self.session.ticket.pokerboard.manager
+        if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
+            self.session.status = pokerboard_models.GameSession.SKIPPED
+            self.session.save()
+            await self.send(text_data=json.dumps({
+                "type": event["type"],
+            }))
+    
+    async def initialise_game(self, event):
+        print("Initialise game")
+        votes = pokerboard_models.Vote.objects.filter(game_session=self.session)
+        vote_serializer = pokerboard_serializers.VoteSerializer(instance=votes, many=True)
+        await self.send(text_data=json.dumps({
+            "type": event["type"],
+            "votes": vote_serializer.data
+        }))
+
+
+    async def vote(self, event):
+        try:
+            serializer = pokerboard_serializers.VoteSerializer(data=event["message"])
+            serializer.is_valid(raise_exception=True)
+            serializer.save(game_session=self.session, user=self.scope["user"])
+            await self.send(text_data=json.dumps(serializer.data))
+        except IntegrityError as e:
+            await self.send(text_data=json.dumps({
+                "error": "A user can't vote two times on a ticket"
+            }))
+        except serializers.ValidationError as e:
+            await self.send(text_data=json.dumps({
+                "error": "Invalid estimate"
+            }))
+
+    async def receive(self, text_data):
+        try:
+            text_data_json = json.loads(text_data)
+            serializer = pokerboard_serializers.MessageSerializer(data=text_data_json)
+            serializer.is_valid(raise_exception=True)
+            message = text_data_json['message']
+            message_type = text_data_json['message_type']
+
+            # Send message to room group
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': message_type,
+                    'message': message
+                }
+            )
+        except serializers.ValidationError as e:
+            print(e)
+            await self.send(text_data=json.dumps({
+                "error": "Something went wrong"
+            }))
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
         )
-    
-    
-    async def chat_message(self, event):
-        print("chat message")
-        print(event)
-        message = event['message']
-
-        # Send message to WebSocket
-        await self.send(text_data=json.dumps({
-            'message': message
-        }))
