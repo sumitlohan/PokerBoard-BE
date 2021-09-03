@@ -52,7 +52,7 @@ class JqlAPIView(APIView):
         Fetch JQL response given a JQL statement
         """
         jql = request.GET.get("jql")
-        url = f"{settings.JIRA_URL}search?jql={jql}"
+        url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
         res = pokerboard_utils.query_jira("GET", url)
         return Response(res, status=status.HTTP_200_OK)
@@ -66,11 +66,11 @@ class SuggestionsAPIView(APIView):
         """
         Fetch available sprints and projects
         """
-        sprint_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_SPRINTS)
+        sprints = pokerboard_utils.get_all_sprints()
         project_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_PROJECTS)
         response = {
             "projects": project_res["results"],
-            "sprints": sprint_res["values"]
+            "sprints": sprints
         }
         return Response(response, status=status.HTTP_200_OK)
 
@@ -86,7 +86,7 @@ class CommentApiView(CreateAPIView):
         """
         issue = serializer.validated_data["issue"]
         comment = serializer.validated_data["comment"]
-        url = f"{settings.JIRA_URL}issue/{issue}/comment"
+        url = f"{pokerboard_constants.JIRA_API_URL_V2}issue/{issue}/comment"
         payload = json.dumps({
             "body": comment
         })
