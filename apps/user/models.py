@@ -74,6 +74,7 @@ class User(AbstractBaseUser, CustomBase):
         default=False, help_text="This user has all permissions without explicitly assigning them"
     )
     password = models.CharField(max_length=150, validators=[PASSWORD_REGEX])
+    is_account_verified = models.BooleanField(default=False, help_text="This account has verified")
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
