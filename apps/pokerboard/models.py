@@ -39,3 +39,38 @@ class Ticket(user_models.CustomBase):
 
     def __str__(self):
         return self.ticket_id
+
+
+class GameSession(user_models.CustomBase):
+    """
+    GameSession model for storing each estimation session's details
+    """
+    IN_PROGRESS = "IN_PROGRESS"
+    SKIPPED = "SKIPPED"
+    ESTIMATED = "ESTIMATED"
+    STATUS_CHOICES = (
+        (IN_PROGRESS, "In progress"),
+        (SKIPPED, "Skipped"),
+        (ESTIMATED, "Estimated"),
+    )
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="estimations")
+    status = models.CharField(max_length=20, default="IN_PROGRESS", choices=STATUS_CHOICES)
+    timer_started_at = models.DateTimeField(null=True)
+
+    def __str__(self) -> str:
+        return f"{self.ticket.ticket_id} {self.status}"
+
+
+class Vote(user_models.CustomBase):
+    """
+    Vote model for storing vote details for each user
+    """
+    game_session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name="votes")
+    user = models.ForeignKey(user_models.User, on_delete=models.CASCADE, related_name="estimations")
+    estimate = models.IntegerField()
+
+    class Meta:
+        unique_together = ('user', 'game_session')
+
+    def __str__(self) -> str:
+        return f"{self.user} {self.game_session.ticket.ticket_id} {self.estimate}"

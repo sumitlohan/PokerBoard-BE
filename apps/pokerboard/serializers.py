@@ -106,3 +106,22 @@ class TicketOrderSerializer(serializers.ModelSerializer):
         second_ticket.save()
         instance.save()
         return validated_data
+
+
+class GameSessionSerializer(serializers.ModelSerializer):
+    ticket = serializers.PrimaryKeyRelatedField(queryset=pokerboard_models.Ticket.objects.only("id"))
+    status = serializers.ChoiceField(choices=pokerboard_models.GameSession.STATUS_CHOICES, required=False)
+    class Meta:
+        model = pokerboard_models.GameSession
+        fields = ["id", "ticket", "status", "timer_started_at"]
+        extra_kwargs = {
+            "timer_started_at": {
+                "required": False
+            }
+        }
+
+    def create(self, validated_data):
+        validated_data["status"] = pokerboard_models.GameSession.IN_PROGRESS
+        validated_data["timer_started_at"] = None
+        return super().create(validated_data)
+    

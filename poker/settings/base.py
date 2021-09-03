@@ -31,6 +31,7 @@ class Setting(Settings):
     THIRD_PARTY_APPS = [
         'corsheaders',
         'rest_framework',
+        'channels',
     ]
 
     INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -81,7 +82,8 @@ class Setting(Settings):
         ],
     }
 
-    WSGI_APPLICATION = 'poker.wsgi.application'
+    # WSGI_APPLICATION = 'poker.wsgi.application'
+    ASGI_APPLICATION = "poker.asgi.application"
 
     AUTH_PASSWORD_VALIDATORS = [
         {

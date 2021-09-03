@@ -100,3 +100,11 @@ class TicketOrderApiView(UpdateAPIView):
     """
     serializer_class = pokerboard_serializers.TicketOrderSerializer
     queryset = pokerboard_models.Ticket.objects.all()
+
+
+class GameSessionApi(CreateAPIView):
+    """
+    Game session API for creating game and fetching active game session
+    """
+    serializer_class = pokerboard_serializers.GameSessionSerializer
+    queryset = pokerboard_models.GameSession.objects.all()
