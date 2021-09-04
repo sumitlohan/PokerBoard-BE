@@ -1,5 +1,6 @@
 from django.conf import settings
 
+
 JIRA_HEADERS = {
     'Authorization': f'Basic {settings.JIRA_AUTH_TOKEN}',
     'Content-Type': 'application/json',

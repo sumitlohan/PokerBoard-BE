@@ -11,5 +11,5 @@ urlpatterns = [
     path("jql", pokerboard_views.JqlAPIView.as_view()),
     path("comment", pokerboard_views.CommentApiView.as_view()),
     path("suggestions", pokerboard_views.SuggestionsAPIView.as_view()),
-    path("tickets/<int:pk>", pokerboard_views.TicketOrderApiView.as_view()),
+    path("tickets", pokerboard_views.TicketOrderApiView.as_view()),
 ] + router.urls

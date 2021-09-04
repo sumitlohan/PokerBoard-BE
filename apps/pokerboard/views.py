@@ -6,7 +6,8 @@ from django.conf import settings
 from django.db.models.query import QuerySet
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, UpdateAPIView
+from rest_framework import serializers
+from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
@@ -37,7 +38,8 @@ class PokerboardApiView(ModelViewSet):
         """
         Get pokerboards a user can access
         """
-        return pokerboard_models.Pokerboard.objects.filter(manager=self.request.user).prefetch_related("tickets")
+        return pokerboard_models.Pokerboard.objects.filter(manager=self.request.user)\
+                    .prefetch_related("tickets")
 
 
 class JqlAPIView(APIView):
@@ -75,11 +77,12 @@ class SuggestionsAPIView(APIView):
         return Response(response, status=status.HTTP_200_OK)
 
 
-class CommentApiView(CreateAPIView):
+class CommentApiView(CreateAPIView, ListAPIView):
     """
     Comment on a Ticket on JIRA
     """
     serializer_class = pokerboard_serializers.CommentSerializer
+    
     def perform_create(self: CreateAPIView, serializer: Serializer) -> Any:
         """
         Comments on a JIRA ticket
@@ -91,12 +94,19 @@ class CommentApiView(CreateAPIView):
             "body": comment
         })
         
-        response = pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
+        pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
 
 
-class TicketOrderApiView(UpdateAPIView):
+class TicketOrderApiView(APIView):
     """
     Ticket order API for ordering tickets
     """
     serializer_class = pokerboard_serializers.TicketOrderSerializer
     queryset = pokerboard_models.Ticket.objects.all()
+    
+    def put(self, request):
+        serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        print(serializer.validated_data)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK)
