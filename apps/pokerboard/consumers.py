@@ -9,7 +9,11 @@ from rest_framework import serializers
 from apps.pokerboard import (
     models as pokerboard_models,
     serializers as pokerboard_serializers,
+    utils as pokerboard_utils,
+    constants as pokerboard_constants,
 )
+from apps.user import serializers as user_serializers
+
 
 class SessionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -26,19 +30,44 @@ class SessionConsumer(AsyncWebsocketConsumer):
         )
         if type(self.scope["user"]) == AnonymousUser or session.status != pokerboard_models.GameSession.IN_PROGRESS:
             await self.close()
+        clients = getattr(self.channel_layer, self.room_group_name, [])
+        if not len(clients):
+            setattr(self.channel_layer, self.room_group_name, [self.scope["user"]])
+        else:
+            
+            clients.append(self.scope["user"])
+            setattr(self.channel_layer, self.room_group_name, clients)
         await self.accept()
 
     async def estimate(self, event):
-        manager = self.session.ticket.pokerboard.manager
-        if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
-            self.session.status = pokerboard_models.GameSession.ESTIMATED
-            self.session.save()
-            self.session.ticket.estimate = event["message"]["estimate"]
-            # TODO: call JIRA api and set estimate
-            self.session.ticket.save()
+        try:
+            manager = self.session.ticket.pokerboard.manager
+            if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
+                self.session.status = pokerboard_models.GameSession.ESTIMATED
+                self.session.save()
+                ticket = self.session.ticket
+                ticket.estimate = event["message"]["estimate"]
+
+                # TODO: replace this url with constants url
+                url = f"https://kaam-dhandha.atlassian.net/rest/api/2/issue/{ticket.ticket_id}"
+                data = json.dumps({
+                    "update": {
+                        'customfield_10016': [
+                            {
+                                "set": ticket.estimate
+                            }
+                        ]
+                    }
+                })
+                pokerboard_utils.query_jira("PUT", url, payload=data, status_code=204)
+                ticket.save()
+                await self.send(text_data=json.dumps({
+                    "type": event["type"],
+                    "estimate": event["message"]["estimate"]
+                }))
+        except serializers.ValidationError as e:
             await self.send(text_data=json.dumps({
-                "type": event["type"],
-                "estimate": event["message"]["estimate"]
+                "error": "Estimation failed"
             }))
 
     async def skip(self, event):
@@ -51,12 +80,14 @@ class SessionConsumer(AsyncWebsocketConsumer):
             }))
     
     async def initialise_game(self, event):
-        print("Initialise game")
         votes = pokerboard_models.Vote.objects.filter(game_session=self.session)
         vote_serializer = pokerboard_serializers.VoteSerializer(instance=votes, many=True)
+        clients = list(getattr(self.channel_layer, self.room_group_name, set()))
+        serializer = user_serializers.UserSerializer(instance=clients, many=True)
         await self.send(text_data=json.dumps({
             "type": event["type"],
-            "votes": vote_serializer.data
+            "votes": vote_serializer.data,
+            "users": serializer.data
         }))
 
 
@@ -92,7 +123,6 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 }
             )
         except serializers.ValidationError as e:
-            print(e)
             await self.send(text_data=json.dumps({
                 "error": "Something went wrong"
             }))
