@@ -7,6 +7,7 @@ from django.db import connection
 
 from rest_framework import serializers
 
+import apps.pokerboard.constants as pokerboard_constants
 import apps.pokerboard.models as pokerboard_models
 import apps.pokerboard.utils as pokerbord_utils
 import apps.user.serializers as user_serializers
@@ -56,7 +57,7 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         # removing [] from ["KD-1", "KD-2"]. ["KD-1", "KD-2"] -> "KD-1", "KD-2"
         ticket_ids = json.dumps(tickets)[1:-1]
         jql = f"issue IN ({ticket_ids})"
-        url = f"{settings.JIRA_URL}search?jql={jql}"
+        url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
         # validate ticket Id's
         pokerbord_utils.query_jira("GET", url)
