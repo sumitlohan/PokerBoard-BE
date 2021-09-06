@@ -1,5 +1,4 @@
 import json
-
 from datetime import datetime
 
 from django.contrib.auth.models import AnonymousUser
@@ -83,7 +82,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
     async def initialise_game(self, event):
         votes = pokerboard_models.Vote.objects.filter(game_session=self.session)
         vote_serializer = pokerboard_serializers.VoteSerializer(instance=votes, many=True)
-        clients = list(getattr(self.channel_layer, self.room_group_name, set()))
+        clients = list(set(getattr(self.channel_layer, self.room_group_name, [])))
         serializer = user_serializers.UserSerializer(instance=clients, many=True)
         await self.send(text_data=json.dumps({
             "type": event["type"],
@@ -97,7 +96,10 @@ class SessionConsumer(AsyncWebsocketConsumer):
             serializer = pokerboard_serializers.VoteSerializer(data=event["message"])
             serializer.is_valid(raise_exception=True)
             serializer.save(game_session=self.session, user=self.scope["user"])
-            await self.send(text_data=json.dumps(serializer.data))
+            await self.send(text_data=json.dumps({
+                "type": event["type"],
+                "vote":serializer.data
+            }))
         except IntegrityError as e:
             await self.send(text_data=json.dumps({
                 "error": "A user can't vote two times on a ticket"
@@ -133,12 +135,15 @@ class SessionConsumer(AsyncWebsocketConsumer):
                     'message': message
                 }
             )
-        except serializers.ValidationError as e:
+        except serializers.ValidationError:
             await self.send(text_data=json.dumps({
                 "error": "Something went wrong"
             }))
 
     async def disconnect(self, code):
+        clients = getattr(self.channel_layer, self.room_group_name, [])
+        clients.remove(self.scope["user"])
+        setattr(self.channel_layer, self.room_group_name, clients)
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
