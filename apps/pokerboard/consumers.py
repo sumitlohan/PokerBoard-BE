@@ -1,5 +1,7 @@
 import json
 
+from datetime import datetime
+
 from django.contrib.auth.models import AnonymousUser
 from django.db.utils import IntegrityError
 
@@ -10,7 +12,6 @@ from apps.pokerboard import (
     models as pokerboard_models,
     serializers as pokerboard_serializers,
     utils as pokerboard_utils,
-    constants as pokerboard_constants,
 )
 from apps.user import serializers as user_serializers
 
@@ -104,6 +105,16 @@ class SessionConsumer(AsyncWebsocketConsumer):
         except serializers.ValidationError as e:
             await self.send(text_data=json.dumps({
                 "error": "Invalid estimate"
+            }))
+
+    async def start_timer(self, event):
+        manager = self.session.ticket.pokerboard.manager
+        if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
+            now = datetime.now()
+            self.session.timer_started_at = now
+            self.session.save()
+            await self.send(text_data=json.dumps({
+                "type": event["type"],
             }))
 
     async def receive(self, text_data):
