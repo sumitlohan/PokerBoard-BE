@@ -108,6 +108,7 @@ class TicketOrderSerializer(serializers.ModelSerializer):
         instance.save()
         return validated_data
 
+
 class VoteSerializer(serializers.ModelSerializer):
     user = user_serializers.UserSerializer(read_only=True)
     class Meta:

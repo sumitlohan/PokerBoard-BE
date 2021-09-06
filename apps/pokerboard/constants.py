@@ -11,3 +11,5 @@ GET_PROJECTS = f"{settings.JIRA_URL}jql/autocompletedata/suggestions?fieldName=p
 MESSAGE_TYPES = ["estimate", "skip", "vote", "initialise_game", "start_timer"]
 
 STORY_POINTS_FIELD = "customfield_10016"
+
+FIBONACCI_OPTIONS = [1, 2, 3, 5, 8, 13, 21, 34]

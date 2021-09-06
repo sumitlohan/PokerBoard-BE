@@ -95,6 +95,8 @@ class SessionConsumer(AsyncWebsocketConsumer):
         try:
             serializer = pokerboard_serializers.VoteSerializer(data=event["message"])
             serializer.is_valid(raise_exception=True)
+            pokerboard_utils.validate_vote(self.session.ticket.pokerboard.estimation_type, serializer.validated_data["estimate"])
+
             serializer.save(game_session=self.session, user=self.scope["user"])
             await self.send(text_data=json.dumps({
                 "type": event["type"],
@@ -105,6 +107,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 "error": "A user can't vote two times on a ticket"
             }))
         except serializers.ValidationError as e:
+            print(e)
             await self.send(text_data=json.dumps({
                 "error": "Invalid estimate"
             }))
