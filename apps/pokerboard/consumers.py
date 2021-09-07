@@ -30,14 +30,22 @@ class SessionConsumer(AsyncWebsocketConsumer):
         )
         if type(self.scope["user"]) == AnonymousUser or session.status != pokerboard_models.GameSession.IN_PROGRESS:
             await self.close()
-        clients = getattr(self.channel_layer, self.room_group_name, [])
-        if not len(clients):
-            setattr(self.channel_layer, self.room_group_name, [self.scope["user"]])
-        else:
-            
-            clients.append(self.scope["user"])
-            setattr(self.channel_layer, self.room_group_name, clients)
+        clients = getattr(self.channel_layer, self.room_group_name, [])    
+        clients.append(self.scope["user"])
+        setattr(self.channel_layer, self.room_group_name, clients)
         await self.accept()
+
+        serializer = user_serializers.UserSerializer(clients, many=True)
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'broadcast',
+                'message': {
+                    'type': 'join',
+                    'users': serializer.data
+                }
+            }
+        )
 
     async def estimate(self, event):
         try:
@@ -152,11 +160,21 @@ class SessionConsumer(AsyncWebsocketConsumer):
     async def broadcast(self, event):
         await self.send(text_data=json.dumps(event["message"]))
 
-
     async def disconnect(self, code):
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.remove(self.scope["user"])
         setattr(self.channel_layer, self.room_group_name, clients)
+        serializer = user_serializers.UserSerializer(list(set(clients)), many=True)
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'broadcast',
+                'message': {
+                    'type': 'leave',
+                    'users': serializer.data
+                }
+            }
+        )
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
