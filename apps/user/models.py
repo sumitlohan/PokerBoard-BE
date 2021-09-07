@@ -56,11 +56,6 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, True, True)
 
 
-PASSWORD_REGEX = RegexValidator(
-        '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', 
-        message="Password must be of minimum 8 characters, at least one uppercase letter, lowercase letter, number and special character"
-)
-
 class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
