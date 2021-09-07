@@ -150,7 +150,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
             }))
 
     async def broadcast(self, event):
-        await self.send(text_data=json.dumps(event))
+        await self.send(text_data=json.dumps(event["message"]))
 
 
     async def disconnect(self, code):
