@@ -61,10 +61,10 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 })
                 pokerboard_utils.query_jira("PUT", url, payload=data, status_code=204)
                 ticket.save()
-                await self.send(text_data=json.dumps({
+                return {
                     "type": event["type"],
                     "estimate": event["message"]["estimate"]
-                }))
+                }
         except serializers.ValidationError as e:
             await self.send(text_data=json.dumps({
                 "error": "Estimation failed"
@@ -75,20 +75,20 @@ class SessionConsumer(AsyncWebsocketConsumer):
         if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
             self.session.status = pokerboard_models.GameSession.SKIPPED
             self.session.save()
-            await self.send(text_data=json.dumps({
+            return {
                 "type": event["type"],
-            }))
+            }
     
     async def initialise_game(self, event):
         votes = pokerboard_models.Vote.objects.filter(game_session=self.session)
         vote_serializer = pokerboard_serializers.VoteSerializer(instance=votes, many=True)
         clients = list(set(getattr(self.channel_layer, self.room_group_name, [])))
         serializer = user_serializers.UserSerializer(instance=clients, many=True)
-        await self.send(text_data=json.dumps({
+        return {
             "type": event["type"],
             "votes": vote_serializer.data,
             "users": serializer.data
-        }))
+        }
 
 
     async def vote(self, event):
@@ -98,10 +98,10 @@ class SessionConsumer(AsyncWebsocketConsumer):
             pokerboard_utils.validate_vote(self.session.ticket.pokerboard.estimation_type, serializer.validated_data["estimate"])
 
             serializer.save(game_session=self.session, user=self.scope["user"])
-            await self.send(text_data=json.dumps({
+            return {
                 "type": event["type"],
                 "vote":serializer.data
-            }))
+            }
         except IntegrityError as e:
             await self.send(text_data=json.dumps({
                 "error": "A user can't vote two times on a ticket"
@@ -118,9 +118,9 @@ class SessionConsumer(AsyncWebsocketConsumer):
             now = datetime.now()
             self.session.timer_started_at = now
             self.session.save()
-            await self.send(text_data=json.dumps({
+            return {
                 "type": event["type"],
-            }))
+            }
 
     async def receive(self, text_data):
         try:
@@ -129,19 +129,29 @@ class SessionConsumer(AsyncWebsocketConsumer):
             serializer.is_valid(raise_exception=True)
             message = text_data_json['message']
             message_type = text_data_json['message_type']
-
-            # Send message to room group
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
+            method_to_call = getattr(self, message_type)
+            res = await method_to_call({
                     'type': message_type,
-                    'message': message
-                }
-            )
+                    'message': message,
+                    'user': self.scope["user"].id
+            })
+            # Send message to room group
+            if res:
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'broadcast',
+                        'message': res
+                    }
+                )
         except serializers.ValidationError:
             await self.send(text_data=json.dumps({
                 "error": "Something went wrong"
             }))
+
+    async def broadcast(self, event):
+        await self.send(text_data=json.dumps(event))
+
 
     async def disconnect(self, code):
         clients = getattr(self.channel_layer, self.room_group_name, [])
