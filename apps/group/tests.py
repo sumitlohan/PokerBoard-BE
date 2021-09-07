@@ -4,8 +4,8 @@ from django.urls import reverse
 
 from rest_framework.test import APITestCase
 
-from apps.group import models as group_models
-from apps.user import models as user_models
+import apps.group.models as group_models
+import apps.user.models as user_models
 
 
 class GroupTestCases(APITestCase):
