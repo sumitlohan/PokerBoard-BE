@@ -7,22 +7,29 @@ class Pokerboard(CustomBase):
     """
     Pokerboard settings class
     """
+    SERIES = 1
+    EVEN = 2
+    ODD = 3
+    FIBONACCI = 4
     ESTIMATION_CHOICES = (
-        (1, "Series"),
-        (2, "Even"),
-        (3, "Odd"),
-        (4, "Fibonacci"),
+        (SERIES, "Series"),
+        (EVEN, "Even"),
+        (EVEN, "Odd"),
+        (FIBONACCI, "Fibonacci"),
     )
+
+    STARTED = 1
+    ENDED = 2
     STATUS_CHOICES = (
-        (1, "Started"),
-        (2, "Ended")
+        (STARTED, "Started"),
+        (ENDED, "Ended")
     )
     manager = models.ForeignKey(User, on_delete=models.CASCADE, help_text='Owner of Pokerboard')
     title = models.CharField(unique=True, max_length=20, help_text='Name of Pokerboard')
     description = models.CharField(max_length=100, help_text='Description')
-    estimation_type = models.IntegerField(choices=ESTIMATION_CHOICES, help_text='Estimation type', default=1)
+    estimation_type = models.IntegerField(choices=ESTIMATION_CHOICES, help_text='Estimation type', default=SERIES)
     duration = models.IntegerField(help_text='Duration for voting (in secs)')
-    status = models.IntegerField(choices=STATUS_CHOICES, default=1)
+    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=STARTED)
     
     def __str__(self) -> str:
         return self.title
