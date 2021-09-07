@@ -53,6 +53,7 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         """
         Validates list of tickets by calling an API
         """
+        attrs = super().validate(attrs)
         tickets = attrs["tickets"]
         # removing [] from ["KD-1", "KD-2"]. ["KD-1", "KD-2"] -> "KD-1", "KD-2"
         ticket_ids = json.dumps(tickets)[1:-1]
@@ -62,7 +63,7 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         # validate ticket Id's
         pokerbord_utils.query_jira("GET", url)
         attrs["manager"] = self.context.get("request").user
-        return super().validate(attrs)
+        return attrs
     
     def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> OrderedDict:
         """
