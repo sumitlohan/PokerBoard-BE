@@ -56,11 +56,6 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, True, True)
 
 
-PASSWORD_REGEX = RegexValidator(
-        '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', 
-        message="Password must be of minimum 8 characters, at least one uppercase letter, lowercase letter, number and special character"
-)
-
 class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
@@ -74,6 +69,7 @@ class User(AbstractBaseUser, CustomBase):
         default=False, help_text="This user has all permissions without explicitly assigning them"
     )
     password = models.CharField(max_length=150, validators=[PASSWORD_REGEX])
+    is_account_verified = models.BooleanField(default=False, help_text="This account has verified")
     objects = UserManager()
 
     USERNAME_FIELD = 'email'

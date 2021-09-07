@@ -1,11 +1,13 @@
-from django.contrib.auth import hashers, authenticate
 from django.core import exceptions
-from django.template.defaultfilters import first
-from django.contrib.auth import hashers
+from django.contrib.auth import hashers, authenticate
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 from rest_framework import serializers as rest_framework_serializers
 
-from apps.user import models as user_models
+from apps.user import(
+    constants as user_constants,
+    models as user_models
+)
 
 
 class UserSerializer(rest_framework_serializers.ModelSerializer):
@@ -15,7 +17,7 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
 
     class Meta:
         model = user_models.User
-        fields = ['first_name', 'last_name', 'email', 'password']
+        fields = ['id', 'email', 'first_name', 'last_name', 'password']
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -25,48 +27,69 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
         Hashing the password and creating a new user
         """
         validated_data['password'] = hashers.make_password(validated_data['password'])
-        user = super().create(validated_data)
+        return super().create(validated_data)
+
+
+class AccountVerificationSerializer(rest_framework_serializers.Serializer):
+    """
+    Email verification serializer
+    """
+    token = rest_framework_serializers.CharField(max_length=150, write_only=True)
+
+    def validate_token(self, attrs):
+        """
+        Checking if the token is valid for account activation
+        """
+        account_activation_token = PasswordResetTokenGenerator()
+        if account_activation_token.check_token(self.instance, attrs):
+            return self.instance
+        raise rest_framework_serializers.ValidationError(user_constants.EMAIL_VALIDATION_ERROR)
+   
+    def update(self, user, validated_data):
+        """
+        Activating user's account
+        """
+        user.is_account_verified = True
+        user.save(update_fields=["is_account_verified"])
         return user
 
-class LoginSerializer(rest_framework_serializers.ModelSerializer):
-    token = rest_framework_serializers.SerializerMethodField()
-    email = rest_framework_serializers.EmailField()
 
-    class Meta:
-        model = user_models.User
-        fields = ['email', 'password', 'token', 'first_name', 'last_name', 'id']
-        extra_kwargs = {
-            'first_name': {'read_only': True},
-            'last_name': {'read_only': True},
-            'id': {'read_only': True},
-            'password': {'write_only': True}
-        }
+class LoginSerializer(rest_framework_serializers.Serializer):
+    """
+    Validating login credentials
+    """
+    email = rest_framework_serializers.EmailField()
+    password = rest_framework_serializers.CharField()
 
     def validate(self, attrs):
-        '''
+        """
         Validating if user exists with given credentials
-        '''
+        """
         email = attrs.get('email')
         password = attrs.get('password')
 
         user = authenticate(email=email, password=password)
-        if user:
+        if user: 
             if not user.is_active:
-                msg = 'User account is disabled.'
-                raise exceptions.ValidationError(msg)
+                raise exceptions.ValidationError('User account is disabled.')
         else:
-            msg = 'Unable to log in with provided credentials.'
-            raise exceptions.ValidationError(msg)
+            raise exceptions.ValidationError('Unable to log in with provided credentials.')
 
         attrs['user'] = user
         return attrs
 
-    def get_token(self, user):
-        '''
-        Creating token for already registered user
-        '''
-        return user_models.Token.objects.create(user=user).key
 
-    def create(self, validated_data):
-        user = validated_data['user']
-        return user
+class UserTokenSerializer(UserSerializer):
+    """
+    Generating token for already registered user
+    """
+    token = rest_framework_serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ['token']
+
+    def get_token(self, user):
+        """
+        Creating token for already registered user
+        """
+        return user_models.Token.objects.create(user=user).key
