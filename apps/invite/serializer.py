@@ -2,21 +2,23 @@ from rest_framework import  serializers
 
 import apps.invite.models as invite_models
 import apps.group.models as group_models
+import apps.pokerboard.models as pokerboard_models
 
-        
 
-class InviteUserSerializer(serializers.ModelSerializer):
-    """
-    Checking if user/ group is already invited and group exists
-    Sending invitation to those eligible
-    """
+class PokerboardMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = invite_models.Invite
-        fields = ['invitee', 'pokerboard', 'group', 'role', 'is_accepted', 'group_name']
+        fields = ['id', 'invitee', 'pokerboard', 'group', 'role', 'is_accepted', 'group_name']
         extra_kwargs = {
             'is_accepted': {'read_only': True},
             'group': {'read_only': True},
         }
+
+class InviteUserSerializer(PokerboardMemberSerializer):
+    """
+    Checking if user/ group is already invited and group exists
+    Sending invitation to those eligible
+    """
 
     def validate(self, attrs):
         """
@@ -53,5 +55,5 @@ class InviteUserSerializer(serializers.ModelSerializer):
             group = validated_data['group']
             members = group_models.GroupMember.objects.filter(group=group)
             for member in members:
-                invite_models.Invite.objects.create(invitee=member.user, pokerboard=pokerboard, group=group, role=role)
+                invite_models.Invite.objects.create(invitee=str(member.user), pokerboard=pokerboard, group=group, role=role)
         return validated_data

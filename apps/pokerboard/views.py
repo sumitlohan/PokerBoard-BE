@@ -13,6 +13,7 @@ from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+import apps.invite.models as invite_models
 import apps.pokerboard.constants as pokerboard_constants 
 import apps.pokerboard.models as pokerboard_models
 import apps.pokerboard.serializers as pokerboard_serializers
@@ -38,8 +39,12 @@ class PokerboardApiView(ModelViewSet):
         """
         Get pokerboards a user can access
         """
-        return pokerboard_models.Pokerboard.objects.filter(manager=self.request.user)\
+        queryset = pokerboard_models.Pokerboard.objects.filter(manager=self.request.user)\
                     .prefetch_related("tickets")
+        invites = invite_models.Invite.objects.filter(invitee=self.request.user).filter(is_accepted=True)
+        for invite in invites:
+            queryset |= pokerboard_models.Pokerboard.objects.filter(title=invite.pokerboard)
+        return queryset
 
 
 class JqlAPIView(APIView):

@@ -11,7 +11,6 @@ class Invite(user_models.CustomBase):
     ROLE = (
         ("SPECTATOR", "Spectator"),
         ("CONTRIBUTOR", "Contributor"),
-
     )
     invitee = models.EmailField(null=True, help_text="Person invited")
     pokerboard = models.ForeignKey(pokerboard_models.Pokerboard, on_delete=models.CASCADE, help_text="Pokerboard")
