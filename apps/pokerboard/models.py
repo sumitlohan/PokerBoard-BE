@@ -14,7 +14,7 @@ class Pokerboard(CustomBase):
     ESTIMATION_CHOICES = (
         (SERIES, "Series"),
         (EVEN, "Even"),
-        (EVEN, "Odd"),
+        (ODD, "Odd"),
         (FIBONACCI, "Fibonacci"),
     )
 
@@ -43,6 +43,9 @@ class Ticket(CustomBase):
     ticket_id = models.SlugField(help_text="Ticket ID imported from JIRA")
     estimate = models.IntegerField(null=True, help_text="Final estimate of ticket")
     rank = models.PositiveSmallIntegerField(help_text="Rank of ticket")
+
+    class Meta:
+        unique_together = ('pokerboard', 'rank')
 
     def __str__(self) -> str:
         return f'{self.ticket_id} - {self.pokerboard}'
