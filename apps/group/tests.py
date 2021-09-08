@@ -169,7 +169,7 @@ class GroupTestCases(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(expected_data, response.data)
 
-    def test_get_group_details_failure(self):
+    def test_get_group_details_not_found(self):
         """
         Get group details by groupId, Expects 404 on invalid groupId
         """
