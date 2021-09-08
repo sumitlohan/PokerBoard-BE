@@ -38,7 +38,7 @@ class GroupTestCases(APITestCase):
         group = expected_member.group
         expected_data = {
             "id": group.id,
-            "name": "Dominos",
+            "name": group.name,
             "created_by": self.user.id,
             "created_at": group.created_at.strftime(DATETIME_FORMAT),
             "updated_at": group.updated_at.strftime(DATETIME_FORMAT),
