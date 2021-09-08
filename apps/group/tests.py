@@ -3,11 +3,12 @@ from django.urls import reverse
 from ddf import G
 from rest_framework.test import APITestCase
 
-from apps.group import models as group_models
+from apps.group import (
+    constants as pokerboard_constants,
+    models as group_models,
+)
 from apps.user import models as user_models
 
-
-DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
 
 class GroupTestCases(APITestCase):
     """
@@ -22,9 +23,9 @@ class GroupTestCases(APITestCase):
         """
 
         self.user = G(user_models.User)
-        self.token = G(user_models.Token, user=self.user).key
+        token = G(user_models.Token, user=self.user)
         self.group = G(group_models.Group, created_by=self.user, name="Kung fu panda")
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
     def test_create_group(self):
         """
@@ -40,8 +41,8 @@ class GroupTestCases(APITestCase):
             "id": group.id,
             "name": group.name,
             "created_by": self.user.id,
-            "created_at": group.created_at.strftime(DATETIME_FORMAT),
-            "updated_at": group.updated_at.strftime(DATETIME_FORMAT),
+            "created_at": group.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+            "updated_at": group.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
             "members": [
                 {
                     "id": expected_member.id,
@@ -52,8 +53,8 @@ class GroupTestCases(APITestCase):
                         "first_name": expected_member.user.first_name,
                         "last_name": expected_member.user.last_name,
                     },
-                    "created_at": expected_member.created_at.strftime(DATETIME_FORMAT),
-                    "updated_at": expected_member.updated_at.strftime(DATETIME_FORMAT),
+                    "created_at": expected_member.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                    "updated_at": expected_member.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
                 }
             ]
         }
@@ -118,8 +119,8 @@ class GroupTestCases(APITestCase):
                 "id": self.group.id,
                 "name": self.group.name,
                 "created_by": self.user.id,
-                "created_at": self.group.created_at.strftime(DATETIME_FORMAT),
-                "updated_at": self.group.updated_at.strftime(DATETIME_FORMAT),
+                "created_at": self.group.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                "updated_at": self.group.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
                 "members": [
                     {
                         "id": expected_member.id,
@@ -130,8 +131,8 @@ class GroupTestCases(APITestCase):
                             "first_name": expected_member.user.first_name,
                             "last_name": expected_member.user.last_name,
                         },
-                        "created_at": expected_member.created_at.strftime(DATETIME_FORMAT),
-                        "updated_at": expected_member.updated_at.strftime(DATETIME_FORMAT),
+                        "created_at": expected_member.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                        "updated_at": expected_member.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
                     }
                 ]
             }
@@ -148,8 +149,8 @@ class GroupTestCases(APITestCase):
             "id": self.group.id,
             "name": self.group.name,
             "created_by": self.user.id,
-            "created_at": self.group.created_at.strftime(DATETIME_FORMAT),
-            "updated_at": self.group.updated_at.strftime(DATETIME_FORMAT),
+            "created_at": self.group.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+            "updated_at": self.group.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
             "members": [
                 {
                     "id": expected_member.id,
@@ -160,8 +161,8 @@ class GroupTestCases(APITestCase):
                         "first_name": expected_member.user.first_name,
                         "last_name": expected_member.user.last_name,
                     },
-                    "created_at": expected_member.created_at.strftime(DATETIME_FORMAT),
-                    "updated_at": expected_member.updated_at.strftime(DATETIME_FORMAT),
+                    "created_at": expected_member.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                    "updated_at": expected_member.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
                 }
             ]
         }
