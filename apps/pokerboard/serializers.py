@@ -109,17 +109,6 @@ class TicketOrderSerializer(serializers.ModelSerializer):
         return validated_data
 
 
-class VoteSerializer(serializers.ModelSerializer):
-    user = user_serializers.UserSerializer(read_only=True)
-    class Meta:
-        model = pokerboard_models.Vote
-        fields = ["estimate", "game_session", "id", "user"]
-        extra_kwargs = {
-            "game_session": {
-                "read_only": True
-            }
-        }
-
 class GameSessionSerializer(serializers.ModelSerializer):
     ticket = TicketSerializer()
     
@@ -132,6 +121,18 @@ class GameSessionSerializer(serializers.ModelSerializer):
             }
         }
 
+
+class VoteSerializer(serializers.ModelSerializer):
+    user = user_serializers.UserSerializer(read_only=True)
+    game_session = GameSessionSerializer(read_only=True)
+    class Meta:
+        model = pokerboard_models.Vote
+        fields = ["estimate", "game_session", "id", "user"]
+        extra_kwargs = {
+            "game_session": {
+                "read_only": True
+            }
+        }
     
 
 class CreateGameSessionSerializer(GameSessionSerializer):
@@ -148,6 +149,7 @@ class CreateGameSessionSerializer(GameSessionSerializer):
         validated_data["status"] = pokerboard_models.GameSession.IN_PROGRESS
         validated_data["timer_started_at"] = None
         return super().create(validated_data)
+
 
 class MessageSerializer(serializers.Serializer):
     message_type = serializers.ChoiceField(choices=MESSAGE_TYPES)
