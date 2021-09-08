@@ -7,6 +7,8 @@ from apps.group import models as group_models
 from apps.user import models as user_models
 
 
+DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%f"
+
 class GroupTestCases(APITestCase):
     """
     Group testcases for testing group list, details and add member functionality
@@ -32,18 +34,31 @@ class GroupTestCases(APITestCase):
             "name": "Dominos"
         }
         response = self.client.post(self.GROUP_URL, data=data, format="json")
-        group = group_models.Group.objects.get(name="Dominos")
-        expected_member = group_models.GroupMember.objects.get(group=group)
+        expected_member = group_models.GroupMember.objects.get(group__name="Dominos")
+        group = expected_member.group
         expected_data = {
             "id": group.id,
             "name": "Dominos",
             "created_by": self.user.id,
+            "created_at": group.created_at.strftime(DATETIME_FORMAT),
+            "updated_at": group.updated_at.strftime(DATETIME_FORMAT),
+            "members": [
+                {
+                    "id": expected_member.id,
+                    "group": expected_member.group.id,
+                    "user": {
+                        "id": expected_member.user.id,
+                        "email": expected_member.user.email,
+                        "first_name": expected_member.user.first_name,
+                        "last_name": expected_member.user.last_name,
+                    },
+                    "created_at": expected_member.created_at.strftime(DATETIME_FORMAT),
+                    "updated_at": expected_member.updated_at.strftime(DATETIME_FORMAT),
+                }
+            ]
         }
-        res_data = response.data
-        member = res_data["members"][0]
         self.assertEqual(response.status_code, 201)
-        self.assertDictContainsSubset(expected_data, res_data)
-        self.assertEqual(member["id"], expected_member.id)
+        self.assertDictEqual(expected_data, response.data)
 
     def test_create_group_unique_name(self):
         """
@@ -58,9 +73,8 @@ class GroupTestCases(APITestCase):
             ]
         }
         response = self.client.post(self.GROUP_URL, data=data, format="json")
-        res_data = response.data
         self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(res_data, expected_data)
+        self.assertDictEqual(response.data, expected_data)
 
     def test_create_group_failure_empty_name(self):
         """
@@ -75,9 +89,8 @@ class GroupTestCases(APITestCase):
             ]
         }
         response = self.client.post(self.GROUP_URL, data=data, format="json")
-        res_data = response.data
         self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(res_data, expected_data)
+        self.assertDictEqual(response.data, expected_data)
 
     def test_create_group_failure_no_name(self):
         """
@@ -90,44 +103,71 @@ class GroupTestCases(APITestCase):
             ]
         }
         response = self.client.post(self.GROUP_URL, data=data, format="json")
-        res_data = response.data
         self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(res_data, expected_data)
+        self.assertDictEqual(response.data, expected_data)
 
     def test_list_group(self):
         """
         Get group list, checks for only group's name
         """
         response = self.client.get(self.GROUP_URL)
-        res_data = response.data
-        expected_data = {
-            "id": self.group.id,
-            "name": self.group.name,
-            "created_by": self.user.id,
-        }
+        expected_member = group_models.GroupMember.objects.get(group=self.group)
+
+        expected_data = [
+            {
+                "id": self.group.id,
+                "name": self.group.name,
+                "created_by": self.user.id,
+                "created_at": self.group.created_at.strftime(DATETIME_FORMAT),
+                "updated_at": self.group.updated_at.strftime(DATETIME_FORMAT),
+                "members": [
+                    {
+                        "id": expected_member.id,
+                        "group": expected_member.group.id,
+                        "user": {
+                            "id": expected_member.user.id,
+                            "email": expected_member.user.email,
+                            "first_name": expected_member.user.first_name,
+                            "last_name": expected_member.user.last_name,
+                        },
+                        "created_at": expected_member.created_at.strftime(DATETIME_FORMAT),
+                        "updated_at": expected_member.updated_at.strftime(DATETIME_FORMAT),
+                    }
+                ]
+            }
+        ]
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(res_data), 1)
-        group = res_data[0]
-        self.assertDictContainsSubset(expected_data, group)
+        self.assertListEqual(expected_data, response.data)
 
     def test_get_group_details(self):
         """
         Get group details by groupId, Expects 200 response code
         """
+        expected_member = group_models.GroupMember.objects.get(group=self.group)
         expected_data = {
             "id": self.group.id,
             "name": self.group.name,
             "created_by": self.user.id,
+            "created_at": self.group.created_at.strftime(DATETIME_FORMAT),
+            "updated_at": self.group.updated_at.strftime(DATETIME_FORMAT),
+            "members": [
+                {
+                    "id": expected_member.id,
+                    "group": expected_member.group.id,
+                    "user": {
+                        "id": expected_member.user.id,
+                        "email": expected_member.user.email,
+                        "first_name": expected_member.user.first_name,
+                        "last_name": expected_member.user.last_name,
+                    },
+                    "created_at": expected_member.created_at.strftime(DATETIME_FORMAT),
+                    "updated_at": expected_member.updated_at.strftime(DATETIME_FORMAT),
+                }
+            ]
         }
-        expected_member = group_models.GroupMember.objects.get(group=self.group)
         response = self.client.get(reverse('groups-detail', args=[self.group.id]))
-        res_data = response.data
         self.assertEqual(response.status_code, 200)
-        member = res_data["members"][0]
-        self.assertDictContainsSubset(expected_data, res_data)
-        self.assertEqual(len(res_data["members"]), 1)
-        self.assertEqual(member["id"], expected_member.id)
-
+        self.assertDictEqual(expected_data, response.data)
 
     def test_get_group_details_failure(self):
         """
@@ -146,7 +186,7 @@ class GroupTestCases(APITestCase):
             "email": user.email
         }
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
-        expected_member = group_models.GroupMember.objects.get(group=self.group, user=user)
+        expected_member = group_models.GroupMember.objects.get(group=self.group, user=user)   
         expected_data = {
             "group": expected_member.group.id,
             "user": {
@@ -156,9 +196,8 @@ class GroupTestCases(APITestCase):
                 "last_name": expected_member.user.last_name,
             }
         }
-        res_data = response.data
         self.assertEqual(response.status_code, 201)
-        self.assertDictEqual(res_data, expected_data)
+        self.assertDictEqual(response.data, expected_data)
 
     def test_add_member_failure_no_email(self):
         """
@@ -173,9 +212,8 @@ class GroupTestCases(APITestCase):
             ]
         }
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
-        res_data = response.data
         self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(res_data, expected_data)
+        self.assertDictEqual(response.data, expected_data)
     
     def test_add_member_failure_no_group(self):
         """
@@ -192,9 +230,8 @@ class GroupTestCases(APITestCase):
         }
 
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
-        res_data = response.data
         self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(res_data, expected_data)
+        self.assertDictEqual(response.data, expected_data)
     
     def test_add_member_multiple_times(self):
         """
@@ -210,9 +247,8 @@ class GroupTestCases(APITestCase):
             ]
         }
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
-        res_data = response.data
         self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(res_data, expected_data)
+        self.assertDictEqual(response.data, expected_data)
 
     def test_add_member_for_non_existing_member(self):
         """
@@ -228,6 +264,5 @@ class GroupTestCases(APITestCase):
             ]
         }
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
-        res_data = response.data
         self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(res_data, expected_data)
+        self.assertDictEqual(response.data, expected_data)
