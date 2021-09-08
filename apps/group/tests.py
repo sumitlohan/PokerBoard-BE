@@ -52,8 +52,15 @@ class GroupTestCases(APITestCase):
         data = {
             "name": self.group.name,
         }
+        expected_data = {
+            "name": [
+                "group with this name already exists."
+            ]
+        }
         response = self.client.post(self.GROUP_URL, data=data, format="json")
+        res_data = response.data
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(res_data, expected_data)
 
     def test_create_group_failure_empty_name(self):
         """
@@ -62,16 +69,30 @@ class GroupTestCases(APITestCase):
         data = {
             "name": ""
         }
+        expected_data = {
+            "name": [
+                "This field may not be blank."
+            ]
+        }
         response = self.client.post(self.GROUP_URL, data=data, format="json")
+        res_data = response.data
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(res_data, expected_data)
 
     def test_create_group_failure_no_name(self):
         """
         Create group, expects bad request on no group name
         """
         data = {}
+        expected_data = {
+            "name": [
+                "This field is required."
+            ]
+        }
         response = self.client.post(self.GROUP_URL, data=data, format="json")
+        res_data = response.data
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(res_data, expected_data)
 
     def test_list_group(self):
         """
@@ -146,8 +167,15 @@ class GroupTestCases(APITestCase):
         data = {
             "group": self.group.id
         }
+        expected_data = {
+            "email": [
+                "This field is required."
+            ]
+        }
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
+        res_data = response.data
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(res_data, expected_data)
     
     def test_add_member_failure_no_group(self):
         """
@@ -157,8 +185,16 @@ class GroupTestCases(APITestCase):
         data = {
             "email": user.email
         }
+        expected_data = {
+            "group": [
+                "This field is required."
+            ]
+        }
+
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
+        res_data = response.data
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(res_data, expected_data)
     
     def test_add_member_multiple_times(self):
         """
@@ -168,8 +204,15 @@ class GroupTestCases(APITestCase):
             "group": self.group.id,
             "email": self.user.email
         }
+        expected_data = {
+            "non_field_errors": [
+                "A member can't be added to a group twice"
+            ]
+        }
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
+        res_data = response.data
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(res_data, expected_data)
 
     def test_add_member_for_non_existing_member(self):
         """
@@ -179,5 +222,12 @@ class GroupTestCases(APITestCase):
             "group": self.group.id,
             "email": "dummy@dummy.com"
         }
+        expected_data = {
+            "non_field_errors": [
+                "No such user"
+            ]
+        }
         response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
+        res_data = response.data
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(res_data, expected_data)
