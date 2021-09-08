@@ -1,7 +1,6 @@
-from collections import OrderedDict
-
 from django.urls import reverse
 
+from ddf import G
 from rest_framework.test import APITestCase
 
 from apps.group import models as group_models
@@ -19,16 +18,10 @@ class GroupTestCases(APITestCase):
         """
         Setup method for creating default user and it's token
         """
-        data = {
-            "email": "rohit@gmail.com",
-            "password": "root",
-            "first_name": "Rohit",
-            "last_name": "Jain",
-        }
 
-        self.user = user_models.User.objects.create(**data)
-        self.token = user_models.Token.objects.create(user=self.user).key
-        self.group = group_models.Group.objects.create(created_by=self.user, name="Kung fu panda")
+        self.user = G(user_models.User)
+        self.token = G(user_models.Token, user=self.user).key
+        self.group = G(group_models.Group, created_by=self.user, name="Kung fu panda")
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
     def test_create_group(self):
@@ -56,7 +49,6 @@ class GroupTestCases(APITestCase):
         """
         Creates group, expects 400 response code on non-unique name
         """
-        group_models.Group.objects.create(created_by=self.user, name="Dominos")
         data = {
             "name": self.group.name,
         }
@@ -127,7 +119,7 @@ class GroupTestCases(APITestCase):
         """
         Add member to group, Expects 201 response code
         """
-        user = user_models.User.objects.create(email="sample@sample.com", password="Qwerty*1234")
+        user = G(user_models.User)
         data = {
             "group": self.group.id,
             "email": user.email
@@ -161,7 +153,7 @@ class GroupTestCases(APITestCase):
         """
         Add member to group, Expects 400 response code on not providing group
         """
-        user = user_models.User.objects.create(email="sample@sample.com", password="Qwerty*1234")
+        user = G(user_models.User)
         data = {
             "email": user.email
         }
