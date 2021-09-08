@@ -1,9 +1,9 @@
 from django.db import models
 
-from apps.user.models import CustomBase, User
+import apps.user.models as user_models
 
 
-class Pokerboard(CustomBase):
+class Pokerboard(user_models.CustomBase):
     """
     Pokerboard settings class
     """
@@ -24,7 +24,7 @@ class Pokerboard(CustomBase):
         (STARTED, "Started"),
         (ENDED, "Ended")
     )
-    manager = models.ForeignKey(User, on_delete=models.CASCADE, help_text='Owner of Pokerboard')
+    manager = models.ForeignKey(user_models.User, on_delete=models.CASCADE, help_text='Owner of Pokerboard')
     title = models.CharField(unique=True, max_length=20, help_text='Name of Pokerboard')
     description = models.CharField(max_length=100, help_text='Description')
     estimation_type = models.IntegerField(choices=ESTIMATION_CHOICES, help_text='Estimation type', default=SERIES)
@@ -35,7 +35,7 @@ class Pokerboard(CustomBase):
         return self.title
 
 
-class Ticket(CustomBase):
+class Ticket(user_models.CustomBase):
     """
     Ticket details class
     """
