@@ -8,8 +8,8 @@ router = SimpleRouter(trailing_slash=False)
 router.register('',pokerboard_views.PokerboardApiView, basename="pokerboards")
 
 urlpatterns = [
-    path("jql", pokerboard_views.JqlAPIView.as_view()),
-    path("comment", pokerboard_views.CommentApiView.as_view()),
-    path("suggestions", pokerboard_views.SuggestionsAPIView.as_view()),
-    path("tickets", pokerboard_views.TicketOrderApiView.as_view()),
+    path("jql", pokerboard_views.JqlAPIView.as_view(), name="jql"),
+    path("comment", pokerboard_views.CommentApiView.as_view(), name="comment"),
+    path("suggestions", pokerboard_views.SuggestionsAPIView.as_view(), name="suggestions"),
+    path("tickets", pokerboard_views.TicketOrderApiView.as_view(), name="tickets"),
 ] + router.urls
