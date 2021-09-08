@@ -1,6 +1,6 @@
 from django.db import models
 
-import apps.user.models as user_models
+from apps.user import models as user_models
 
 
 class Group(user_models.CustomBase):
