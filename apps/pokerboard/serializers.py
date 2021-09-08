@@ -2,14 +2,15 @@ import json
 from typing import Any
 from typing_extensions import OrderedDict
 
-from django.conf import settings
 from django.db import connection
 
 from rest_framework import serializers
 
-import apps.pokerboard.constants as pokerboard_constants
-import apps.pokerboard.models as pokerboard_models
-import apps.pokerboard.utils as pokerbord_utils
+from apps.pokerboard import (
+    constants as pokerboard_constants,
+    models as pokerboard_models,
+    utils as pokerboard_utils
+)
 import apps.user.serializers as user_serializers
 
 
@@ -61,7 +62,7 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
         # validate ticket Id's
-        pokerbord_utils.query_jira("GET", url)
+        pokerboard_utils.query_jira("GET", url)
         attrs["manager"] = self.context.get("request").user
         return attrs
     

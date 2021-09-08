@@ -3,7 +3,7 @@ import requests
 
 from rest_framework.serializers import ValidationError
 
-import apps.pokerboard.constants as pokerboard_constants 
+from apps.pokerboard import constants as pokerboard_constants 
 
 
 def query_jira(method, url, payload={}, status_code=200):

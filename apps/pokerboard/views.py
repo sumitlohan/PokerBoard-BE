@@ -2,22 +2,21 @@ import json
 from typing import Any
 from typing_extensions import OrderedDict
 
-from django.conf import settings
 from django.db.models.query import QuerySet
 
 from rest_framework import status
-from rest_framework import serializers
-from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-import apps.pokerboard.constants as pokerboard_constants 
-import apps.pokerboard.models as pokerboard_models
-import apps.pokerboard.serializers as pokerboard_serializers
-import apps.pokerboard.utils as pokerboard_utils 
-
+from apps.pokerboard import (
+    constants as pokerboard_constants,
+    models as pokerboard_models,
+    serializers as pokerboard_serializers,
+    utils as pokerboard_utils
+)
 
 class PokerboardApiView(ModelViewSet):
     """
@@ -82,7 +81,15 @@ class CommentApiView(CreateAPIView, ListAPIView):
     Comment on a Ticket on JIRA
     """
     serializer_class = pokerboard_serializers.CommentSerializer
-    
+
+    def get(self, request):
+        """
+        Get comments on a JIRA ticket
+        """
+        issueId = request.GET.get("issueId")
+        response = pokerboard_utils.query_jira(method="GET", url=f"{pokerboard_constants.JIRA_API_URL_V2}issue/{issueId}/comment")
+        return Response(response["comments"], status=status.HTTP_200_OK)
+
     def perform_create(self: CreateAPIView, serializer: Serializer) -> Any:
         """
         Comments on a JIRA ticket
@@ -104,6 +111,7 @@ class TicketOrderApiView(APIView):
     serializer_class = pokerboard_serializers.TicketOrderSerializer
     queryset = pokerboard_models.Ticket.objects.all()
     
+
     def put(self, request):
         serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

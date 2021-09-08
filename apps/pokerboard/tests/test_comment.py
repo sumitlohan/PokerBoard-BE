@@ -27,8 +27,10 @@ class CommentTestCases(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
     def test_get_comments(self):
-        # response = self.client.get(self.COMMENTS_URL)
-        pass
+        response = self.client.get(f"{self.COMMENTS_URL}?issueId=KD-4")
+        res_data = response.data
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(type(res_data), list)
 
     def test_post_comments(self):
         data = {

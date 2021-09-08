@@ -2,7 +2,7 @@ from django.urls import path
 
 from rest_framework.routers import SimpleRouter
 
-import apps.pokerboard.views as pokerboard_views
+from apps.pokerboard import views as pokerboard_views
 
 router = SimpleRouter(trailing_slash=False)
 router.register('',pokerboard_views.PokerboardApiView, basename="pokerboards")
