@@ -95,7 +95,8 @@ class SessionConsumer(AsyncWebsocketConsumer):
         return {
             "type": event["type"],
             "votes": vote_serializer.data,
-            "users": serializer.data
+            "users": serializer.data,
+            "timer": self.session.timer_started_at
         }
 
 
@@ -128,6 +129,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
             self.session.save()
             return {
                 "type": event["type"],
+                "timer_started_at": now,
             }
 
     async def receive(self, text_data):
