@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from ddf import G
@@ -22,7 +23,7 @@ class GroupTestCases(APITestCase):
         Setup method for creating default user and it's token
         """
 
-        self.user = G(user_models.User)
+        self.user = G(get_user_model())
         token = G(user_models.Token, user=self.user)
         self.group = G(group_models.Group, created_by=self.user, name="Kung fu panda")
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
@@ -93,7 +94,7 @@ class GroupTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(response.data, expected_data)
 
-    def test_create_group_failure_no_name(self):
+    def test_create_group_failure_without_name(self):
         """
         Create group, expects bad request on no group name
         """
@@ -181,7 +182,7 @@ class GroupTestCases(APITestCase):
         """
         Add member to group, Expects 201 response code
         """
-        user = G(user_models.User)
+        user = G(get_user_model())
         data = {
             "group": self.group.id,
             "email": user.email
@@ -200,7 +201,7 @@ class GroupTestCases(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertDictEqual(response.data, expected_data)
 
-    def test_add_member_failure_no_email(self):
+    def test_add_member_failure_without_email(self):
         """
         Add member to group, Expects 400 response code on not providing email
         """
@@ -216,11 +217,11 @@ class GroupTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(response.data, expected_data)
     
-    def test_add_member_failure_no_group(self):
+    def test_add_member_failure_without_group(self):
         """
         Add member to group, Expects 400 response code on not providing group
         """
-        user_2 = G(user_models.User)
+        user_2 = G(get_user_model())
         data = {
             "email": user_2.email
         }

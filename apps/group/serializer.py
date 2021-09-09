@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.group import models as group_models
@@ -33,7 +34,7 @@ class AddGroupMemberSerializer(serializers.Serializer):
         """
         email = attrs["email"]
         group = attrs["group"]
-        user = user_models.User.objects.filter(email=email).first()
+        user = get_user_model.objects.filter(email=email).first()
         if not user:
             raise serializers.ValidationError("No such user")
         member = group_models.GroupMember.objects.filter(user=user, group=group).count()
