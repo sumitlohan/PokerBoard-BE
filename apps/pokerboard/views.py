@@ -115,7 +115,7 @@ class TicketOrderApiView(APIView):
         """
         Changes ticket ordering
         """
-        serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, partial=True)
+        serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
