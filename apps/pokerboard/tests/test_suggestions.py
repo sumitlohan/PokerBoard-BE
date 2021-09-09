@@ -1,6 +1,6 @@
-from typing_extensions import OrderedDict
 from django.urls import reverse
 
+from ddf import G
 from rest_framework.test import APITestCase
 
 from apps.pokerboard import utils as pokerboard_utils
@@ -17,15 +17,8 @@ class SuggestionsTestCases(APITestCase):
         """
         Setup method for creating default user and it's token
         """
-        data = {
-            "email": "rohit@gmail.com",
-            "password": "root",
-            "first_name": "Rohit",
-            "last_name": "Jain",
-        }
-
-        self.user = user_models.User.objects.create(**data)
-        self.token = user_models.Token.objects.create(user=self.user).key
+        self.user = G(user_models.User)
+        self.token = G(user_models.Token, user=self.user).key
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
     def test_suggestions(self):

@@ -44,8 +44,5 @@ class Ticket(user_models.CustomBase):
     estimate = models.IntegerField(null=True, help_text="Final estimate of ticket")
     rank = models.PositiveSmallIntegerField(help_text="Rank of ticket")
 
-    class Meta:
-        unique_together = ('pokerboard', 'rank')
-
     def __str__(self) -> str:
         return f'{self.ticket_id} - {self.pokerboard}'

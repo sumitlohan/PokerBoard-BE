@@ -111,10 +111,8 @@ class TicketOrderApiView(APIView):
     serializer_class = pokerboard_serializers.TicketOrderSerializer
     queryset = pokerboard_models.Ticket.objects.all()
     
-
     def put(self, request):
         serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        print(serializer.validated_data)
         serializer.save()
-        return Response(status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)

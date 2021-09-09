@@ -2,8 +2,6 @@ import json
 from typing import Any
 from typing_extensions import OrderedDict
 
-from django.db import connection
-
 from rest_framework import serializers
 
 from apps.pokerboard import (
@@ -88,12 +86,16 @@ class CommentSerializer(serializers.Serializer):
 
 class TicketOrderSerializer(serializers.ListSerializer):
     child = TicketSerializer()
+
     def create(self, validated_data):
-        print(len(connection.queries))
-        tickets = [pokerboard_models.Ticket.objects.get(ticket_id=ticket.get('ticket_id')) for ticket in validated_data]
+        """
+        Order tickets according to ticket_id's
+        """
+        pokerboard = validated_data[0]["pokerboard"]
+        ticket_ids = list(map(lambda x: x["ticket_id"], validated_data))
+        tickets = pokerboard_models.Ticket.objects.filter(ticket_id__in=ticket_ids, pokerboard=pokerboard).all()
         for ticket, updated_ticket in zip(tickets, validated_data):
             ticket.rank = updated_ticket.get('rank')
         updated_tickets = pokerboard_models.Ticket.objects.bulk_update(tickets, ['rank'])
-        print(len(connection.queries))
 
         return validated_data
