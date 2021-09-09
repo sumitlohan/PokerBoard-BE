@@ -10,6 +10,9 @@ def query_jira(method, url, payload="{}", status_code=200):
     Permform a request and returns response
     """
     response = requests.request(method, url, headers=pokerboard_constants.JIRA_HEADERS, data=payload)
+    print("start")
+    print(response)
+    print("End")
     if response.status_code != status_code:
         raise ValidationError("Something went wrong")
     result = response.text if response.text else "{}"

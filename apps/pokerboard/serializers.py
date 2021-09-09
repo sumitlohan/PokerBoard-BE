@@ -109,6 +109,29 @@ class TicketOrderSerializer(serializers.ModelSerializer):
         return validated_data
 
 
+class VoteSerializer(serializers.ModelSerializer):
+    user = user_serializers.UserSerializer(read_only=True)
+    class Meta:
+        model = pokerboard_models.Vote
+        fields = ["estimate", "game_session", "id", "user"]
+        extra_kwargs = {
+            "game_session": {
+                "read_only": True
+            }
+        }
+
+    def create(self, validated_data):
+        try:
+            #if user is changing his vote
+            vote = pokerboard_models.Vote.objects.get(user_id=validated_data['user'].id, 
+            game_session_id=validated_data['game_session'].id)
+            vote.estimate = validated_data['estimate']
+            vote.save(update_fields=["estimate"])
+            return vote
+        except:
+            # if vote is not already casted
+            return super().create(validated_data)
+
 class GameSessionSerializer(serializers.ModelSerializer):
     ticket = TicketSerializer()
     
@@ -118,19 +141,6 @@ class GameSessionSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "timer_started_at": {
                 "required": False
-            }
-        }
-
-
-class VoteSerializer(serializers.ModelSerializer):
-    user = user_serializers.UserSerializer(read_only=True)
-    game_session = GameSessionSerializer(read_only=True)
-    class Meta:
-        model = pokerboard_models.Vote
-        fields = ["estimate", "game_session", "id", "user"]
-        extra_kwargs = {
-            "game_session": {
-                "read_only": True
             }
         }
     
