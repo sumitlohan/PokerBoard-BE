@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from ddf import G
@@ -12,20 +13,26 @@ class CommentTestCases(APITestCase):
     """
     COMMENTS_URL = reverse('comment')
 
-    def setUp(self):
+    def setUp(self: APITestCase) -> None:
         """
         Setup method for creating default user and it's token
         """
-        self.user = G(user_models.User)
+        self.user = G(get_user_model())
         self.token = G(user_models.Token, user=self.user).key
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
-    def test_get_comments(self):
+    def test_get_comments(self: APITestCase) -> None:
+        """
+        Test Get comments for an issue
+        """
         response = self.client.get(f"{self.COMMENTS_URL}?issueId=KD-4")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(type(response.data), list)
 
-    def test_post_comments(self):
+    def test_post_comments(self: APITestCase) -> None:
+        """
+        Test post comment on an issue
+        """
         data = {
             "comment": "Hello there",
             "issue": "KD-2"
@@ -34,7 +41,10 @@ class CommentTestCases(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertDictEqual(response.data, data)
 
-    def test_post_comments_with_invalid_issue(self):
+    def test_post_comments_with_invalid_issue(self: APITestCase) -> None:
+        """
+        Test post comment with invalid issue
+        """
         data = {
             "comment": "Hello there",
             "issue": "KD-267"
@@ -46,7 +56,10 @@ class CommentTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertListEqual(expected_data, response.data)
 
-    def test_post_comments_with_invalid_comment(self):
+    def test_post_comments_with_invalid_comment(self: APITestCase) -> None:
+        """
+        Test post comment with invalid comment
+        """
         data = {
             "comment": "",
             "issue": "KD-2"

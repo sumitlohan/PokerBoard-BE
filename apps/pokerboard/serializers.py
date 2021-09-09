@@ -87,7 +87,7 @@ class CommentSerializer(serializers.Serializer):
 class TicketOrderSerializer(serializers.ListSerializer):
     child = TicketSerializer()
 
-    def create(self, validated_data):
+    def create(self: serializers.ListSerializer, validated_data: list) -> list:
         """
         Order tickets according to ticket_id's
         """

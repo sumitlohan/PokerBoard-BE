@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from ddf import G
@@ -16,17 +17,20 @@ class PokerboardTestCases(APITestCase):
     """
     POKERBOARD_URL = reverse('pokerboards-list')
 
-    def setUp(self):
+    def setUp(self: APITestCase) -> None:
         """
         Setup method for creating default user and it's token
         """
-        self.user = G(user_models.User)
+        self.user = G(get_user_model())
         self.token = G(user_models.Token, user=self.user).key
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user)
 
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
-    def test_create_pokerboard(self):
+    def test_create_pokerboard(self: APITestCase) -> None:
+        """
+        Test create pokerboard
+        """
         data = {
             "title": "Avengers",
             "description": "Take down thanos",
@@ -54,7 +58,10 @@ class PokerboardTestCases(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertDictEqual(expected_data, response.data)
         
-    def test_create_pokerboard_without_title(self):
+    def test_create_pokerboard_without_title(self: APITestCase) -> None:
+        """
+        Test create pokerboard without title
+        """
         data = {
             "description": "Take down thanos",
             "duration": 60,
@@ -70,7 +77,10 @@ class PokerboardTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
-    def test_create_pokerboard_without_description(self):
+    def test_create_pokerboard_without_description(self: APITestCase) -> None:
+        """
+        Test create pokerboard without description
+        """
         data = {
             "title": "Marvel",
             "duration": 60,
@@ -86,7 +96,10 @@ class PokerboardTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
-    def test_create_pokerboard_without_tickets(self):
+    def test_create_pokerboard_without_tickets(self: APITestCase) -> None:
+        """
+        Test create pokerboard without tickets
+        """
         data = {
             "title": "Marvel",
             "description": "Take down thanos",
@@ -102,7 +115,10 @@ class PokerboardTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
-    def test_create_pokerboard_with_invalid_tickets(self):
+    def test_create_pokerboard_with_invalid_tickets(self: APITestCase) -> None:
+        """
+        Test create pokerboard with invalid tickets
+        """
         data = {
             "title": "Marvel",
             "description": "Take down thanos",
@@ -119,7 +135,10 @@ class PokerboardTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
-    def test_create_pokerboard_with_empty_tickets_array(self):
+    def test_create_pokerboard_with_empty_tickets_array(self: APITestCase) -> None:
+        """
+        Test create pokerboard with empty tickets array
+        """
         data = {
             "title": "Marvel",
             "description": "Take down thanos",
@@ -137,7 +156,10 @@ class PokerboardTestCases(APITestCase):
         self.assertDictEqual(expected_data, response.data)
 
     
-    def test_pokerboard_details(self):
+    def test_pokerboard_details(self: APITestCase) -> None:
+        """
+        Test get pokerboard details
+        """
         expected_data = {
             "id": self.pokerboard.id,
             "title": self.pokerboard.title,
@@ -158,7 +180,10 @@ class PokerboardTestCases(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(expected_data, response.data)
 
-    def test_pokerboard_list(self):
+    def test_pokerboard_list(self: APITestCase) -> None:
+        """
+        Test list pokerboards
+        """
         expected_data = [
             {
                 "id": self.pokerboard.id,

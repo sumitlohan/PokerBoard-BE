@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from ddf import G
@@ -13,11 +14,11 @@ class TicketOrderTestCases(APITestCase):
     """
     TICKETS_URL = reverse('tickets')
 
-    def setUp(self):
+    def setUp(self: APITestCase) -> None:
         """
         Setup method for creating default user and it's token
         """
-        self.user = G(user_models.User)
+        self.user = G(get_user_model())
         self.token = G(user_models.Token, user=self.user).key
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user)
@@ -26,7 +27,10 @@ class TicketOrderTestCases(APITestCase):
             G(pokerboard_models.Ticket, pokerboard=self.pokerboard, rank=2),
         ]
 
-    def test_order_tickets(self):
+    def test_order_tickets(self: APITestCase) -> None:
+        """
+        Test change ticket ordering
+        """
         ranks = [2,1]
         data = []
         expected_data = []

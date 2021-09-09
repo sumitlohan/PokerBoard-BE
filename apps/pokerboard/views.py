@@ -112,6 +112,9 @@ class TicketOrderApiView(APIView):
     queryset = pokerboard_models.Ticket.objects.all()
     
     def put(self, request):
+        """
+        Changes ticket ordering
+        """
         serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

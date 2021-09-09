@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.http import urlencode
 
@@ -13,15 +14,15 @@ class JqlTestCases(APITestCase):
     """
     JQL_URL = reverse('jql')
 
-    def setUp(self):
+    def setUp(self: APITestCase) -> None:
         """
         Setup method for creating default user and it's token
         """
-        self.user = G(user_models.User)
+        self.user = G(get_user_model())
         self.token = G(user_models.Token, user=self.user).key
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
-    def test_search_jql(self):
+    def test_search_jql(self: APITestCase) -> None:
         """
         Creates group, check for it's name and default group member
         """
@@ -32,7 +33,7 @@ class JqlTestCases(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["issues"]), 2)
 
-    def test_search_jql_for_invalid_jql(self):
+    def test_search_jql_for_invalid_jql(self: APITestCase) -> None:
         """
         Creates group, check for it's name and default group member
         """
