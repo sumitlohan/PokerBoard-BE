@@ -18,13 +18,14 @@ from apps.pokerboard import (
     utils as pokerboard_utils
 )
 
+
 class PokerboardApiView(ModelViewSet):
     """
     Pokerboard API for getting pokerboard list/details, and creating pokerboard.
     """
 
     http_method_names = ["get", "post"]
-    
+
     def get_serializer_class(self: ModelViewSet) -> Serializer:
         """
         Get serializer class based on request's method
@@ -38,7 +39,7 @@ class PokerboardApiView(ModelViewSet):
         Get pokerboards a user can access
         """
         return pokerboard_models.Pokerboard.objects.filter(manager=self.request.user)\
-                    .prefetch_related("tickets")
+            .prefetch_related("tickets")
 
 
 class JqlAPIView(APIView):
@@ -100,7 +101,7 @@ class CommentApiView(CreateAPIView, ListAPIView):
         payload = json.dumps({
             "body": comment
         })
-        
+
         pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
 
 
@@ -110,7 +111,7 @@ class TicketOrderApiView(APIView):
     """
     serializer_class = pokerboard_serializers.TicketOrderSerializer
     queryset = pokerboard_models.Ticket.objects.all()
-    
+
     def put(self, request):
         """
         Changes ticket ordering

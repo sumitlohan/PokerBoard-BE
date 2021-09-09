@@ -31,7 +31,7 @@ class TicketOrderTestCases(APITestCase):
         """
         Test change ticket ordering
         """
-        ranks = [2,1]
+        ranks = [2, 1]
         data = []
         expected_data = []
         for ticket, rank in zip(self.tickets, ranks):
@@ -48,8 +48,8 @@ class TicketOrderTestCases(APITestCase):
                 "estimate": None
             }
             expected_data.append(expected_obj)
-        
-        response = self.client.put(self.TICKETS_URL, data=data, format="json")
+
+        response = self.client.put(self.TICKETS_URL, data=data)
         self.assertEqual(response.status_code, 200)
         self.assertListEqual(expected_data, response.data)
 
@@ -57,7 +57,7 @@ class TicketOrderTestCases(APITestCase):
         """
         Test change ticket ordering without ticket Id's
         """
-        ranks = [2,1]
+        ranks = [2, 1]
         data = []
         expected_data = [
             {
@@ -77,8 +77,8 @@ class TicketOrderTestCases(APITestCase):
                 "rank": rank
             }
             data.append(obj)
-        
-        response = self.client.put(self.TICKETS_URL, data=data, format="json")
+
+        response = self.client.put(self.TICKETS_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertListEqual(expected_data, response.data)
 
@@ -86,7 +86,7 @@ class TicketOrderTestCases(APITestCase):
         """
         Test change ticket ordering without ranks
         """
-        ranks = [2,1]
+        ranks = [2, 1]
         data = []
         expected_data = [
             {
@@ -106,8 +106,8 @@ class TicketOrderTestCases(APITestCase):
                 "ticket_id": ticket.ticket_id
             }
             data.append(obj)
-        
-        response = self.client.put(self.TICKETS_URL, data=data, format="json")
+
+        response = self.client.put(self.TICKETS_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertListEqual(expected_data, response.data)
 
@@ -115,7 +115,7 @@ class TicketOrderTestCases(APITestCase):
         """
         Test change ticket ordering without pokerboard
         """
-        ranks = [2,1]
+        ranks = [2, 1]
         data = []
         expected_data = [
             {
@@ -135,7 +135,7 @@ class TicketOrderTestCases(APITestCase):
                 "rank": rank
             }
             data.append(obj)
-        
-        response = self.client.put(self.TICKETS_URL, data=data, format="json")
+
+        response = self.client.put(self.TICKETS_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertListEqual(expected_data, response.data)

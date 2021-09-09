@@ -30,7 +30,7 @@ class Pokerboard(user_models.CustomBase):
     estimation_type = models.IntegerField(choices=ESTIMATION_CHOICES, help_text='Estimation type', default=SERIES)
     duration = models.IntegerField(help_text='Duration for voting (in secs)')
     status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=STARTED)
-    
+
     def __str__(self) -> str:
         return self.title
 

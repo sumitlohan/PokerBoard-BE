@@ -38,7 +38,7 @@ class PokerboardTestCases(APITestCase):
             "estimation_type": pokerboard_models.Pokerboard.FIBONACCI,
             "tickets": ["KD-1", "KD-2"]
         }
-        response = self.client.post(self.POKERBOARD_URL, data=data, format="json")
+        response = self.client.post(self.POKERBOARD_URL, data=data)
         pokerboard = pokerboard_models.Pokerboard.objects.get(title=data["title"])
         expected_data = {
             "id": pokerboard.id,
@@ -57,7 +57,7 @@ class PokerboardTestCases(APITestCase):
         }
         self.assertEqual(response.status_code, 201)
         self.assertDictEqual(expected_data, response.data)
-        
+
     def test_create_pokerboard_without_title(self: APITestCase) -> None:
         """
         Test create pokerboard without title
@@ -73,7 +73,7 @@ class PokerboardTestCases(APITestCase):
                 "This field is required."
             ]
         }
-        response = self.client.post(self.POKERBOARD_URL, data=data, format="json")
+        response = self.client.post(self.POKERBOARD_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
@@ -92,7 +92,7 @@ class PokerboardTestCases(APITestCase):
                 "This field is required."
             ]
         }
-        response = self.client.post(self.POKERBOARD_URL, data=data, format="json")
+        response = self.client.post(self.POKERBOARD_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
@@ -111,7 +111,7 @@ class PokerboardTestCases(APITestCase):
                 "This field is required."
             ]
         }
-        response = self.client.post(self.POKERBOARD_URL, data=data, format="json")
+        response = self.client.post(self.POKERBOARD_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
@@ -131,7 +131,7 @@ class PokerboardTestCases(APITestCase):
                 "The issue key 'K-2' for field 'issue' is invalid."
             ]
         }
-        response = self.client.post(self.POKERBOARD_URL, data=data, format="json")
+        response = self.client.post(self.POKERBOARD_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
@@ -151,11 +151,10 @@ class PokerboardTestCases(APITestCase):
                 "Error in JQL Query: Expecting either a value, list or function but got ')'. You must surround ')' in quotation marks to use it as a value. (line 1, character 11)"
             ]
         }
-        response = self.client.post(self.POKERBOARD_URL, data=data, format="json")
+        response = self.client.post(self.POKERBOARD_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
-    
     def test_pokerboard_details(self: APITestCase) -> None:
         """
         Test get pokerboard details

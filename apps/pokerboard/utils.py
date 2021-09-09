@@ -3,7 +3,7 @@ import requests
 
 from rest_framework.serializers import ValidationError
 
-from apps.pokerboard import constants as pokerboard_constants 
+from apps.pokerboard import constants as pokerboard_constants
 
 
 def query_jira(method, url, payload={}, status_code=200):
@@ -20,6 +20,7 @@ def query_jira(method, url, payload={}, status_code=200):
             pass
         raise ValidationError(error_msgs)
     return json.loads(response.text)
+
 
 def get_all_sprints():
     """

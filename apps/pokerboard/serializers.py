@@ -63,7 +63,7 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         pokerboard_utils.query_jira("GET", url)
         attrs["manager"] = self.context.get("request").user
         return attrs
-    
+
     def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> OrderedDict:
         """
         Creates Pokerboard object and list of Ticket objects
