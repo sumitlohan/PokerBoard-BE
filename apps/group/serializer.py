@@ -34,7 +34,7 @@ class AddGroupMemberSerializer(serializers.Serializer):
         """
         email = attrs["email"]
         group = attrs["group"]
-        user = get_user_model.objects.filter(email=email).first()
+        user = get_user_model().objects.filter(email=email).first()
         if not user:
             raise serializers.ValidationError("No such user")
         member = group_models.GroupMember.objects.filter(user=user, group=group).count()
