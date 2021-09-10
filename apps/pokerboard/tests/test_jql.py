@@ -1,3 +1,6 @@
+import json
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -5,6 +8,7 @@ from django.utils.http import urlencode
 from ddf import G
 from rest_framework.test import APITestCase
 
+from apps.pokerboard.tests import mock_data as pokerboard_mock_data
 from apps.user import models as user_models
 
 
@@ -29,20 +33,9 @@ class JqlTestCases(APITestCase):
         kwargs = {
             "jql": "issue IN (KD-1, KD-2)"
         }
-        response = self.client.get(f"{self.JQL_URL}?{urlencode(kwargs)}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["issues"]), 2)
-
-    def test_search_jql_for_invalid_jql(self: APITestCase) -> None:
-        """
-        Creates group, check for it's name and default group member
-        """
-        kwargs = {
-            "jql": "issue IN "
-        }
-        expected_data = [
-            "Error in JQL Query: Expecting either a value, list or function before the end of the query."
-        ]
-        response = self.client.get(f"{self.JQL_URL}?{urlencode(kwargs)}")
-        self.assertEqual(response.status_code, 400)
-        self.assertListEqual(expected_data, response.data)
+        with patch("apps.pokerboard.utils.requests.request") as mock_get:
+            mock_get.return_value.status_code = 200
+            mock_get.return_value.text = json.dumps(pokerboard_mock_data.JQL_RESPONSE)
+            response = self.client.get(f"{self.JQL_URL}?{urlencode(kwargs)}")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data, pokerboard_mock_data.JQL_RESPONSE)

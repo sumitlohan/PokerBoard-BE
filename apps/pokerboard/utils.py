@@ -22,14 +22,29 @@ def query_jira(method, url, payload={}, status_code=200):
     return json.loads(response.text)
 
 
+def get_sprints(boardId):
+    """
+    Get sprints for a given board
+    """
+    sprint_res = query_jira("GET", f"{pokerboard_constants.JIRA_API_URL_V1}board/{boardId}/sprint")
+    return sprint_res["values"]
+
+
+def get_boards():
+    """
+    Get all available boards
+    """
+    boards_url = f"{pokerboard_constants.JIRA_API_URL_V1}board"
+    boards_res = query_jira("GET", boards_url)
+    return boards_res["values"]
+
+
 def get_all_sprints():
     """
     Fetches all sprints from all available boards
     """
-    boards_url = f"{pokerboard_constants.JIRA_API_URL_V1}board"
-    boards_res = query_jira("GET", boards_url)
+    boards = get_boards()
     sprints = []
-    for board in boards_res["values"]:
-        sprint_res = query_jira("GET", f"{pokerboard_constants.JIRA_API_URL_V1}board/{board['id']}/sprint")
-        sprints = sprints + sprint_res["values"]
+    for board in boards:
+        sprints = sprints + get_sprints(board["id"])
     return sprints

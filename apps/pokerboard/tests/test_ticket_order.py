@@ -12,7 +12,6 @@ class TicketOrderTestCases(APITestCase):
     """
     Group testcases for testing group list, details and add member functionality
     """
-    TICKETS_URL = reverse('tickets')
 
     def setUp(self: APITestCase) -> None:
         """
@@ -37,19 +36,17 @@ class TicketOrderTestCases(APITestCase):
         for ticket, rank in zip(self.tickets, ranks):
             obj = {
                 "ticket_id": ticket.ticket_id,
-                "pokerboard": ticket.pokerboard.id,
                 "rank": rank
             }
             data.append(obj)
             expected_obj = {
                 "ticket_id": ticket.ticket_id,
-                "pokerboard": ticket.pokerboard.id,
                 "rank": rank,
                 "estimate": None
             }
             expected_data.append(expected_obj)
-
-        response = self.client.put(self.TICKETS_URL, data=data)
+        url = reverse("order-tickets", args=[self.pokerboard.id])
+        response = self.client.put(url, data=data, format="json")
         self.assertEqual(response.status_code, 200)
         self.assertListEqual(expected_data, response.data)
 
@@ -73,12 +70,11 @@ class TicketOrderTestCases(APITestCase):
         ]
         for ticket, rank in zip(self.tickets, ranks):
             obj = {
-                "pokerboard": ticket.pokerboard.id,
                 "rank": rank
             }
             data.append(obj)
 
-        response = self.client.put(self.TICKETS_URL, data=data)
+        response = self.client.put(reverse("order-tickets", args=[self.pokerboard.id]), data=data, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertListEqual(expected_data, response.data)
 
@@ -102,40 +98,10 @@ class TicketOrderTestCases(APITestCase):
         ]
         for ticket, rank in zip(self.tickets, ranks):
             obj = {
-                "pokerboard": ticket.pokerboard.id,
                 "ticket_id": ticket.ticket_id
             }
             data.append(obj)
 
-        response = self.client.put(self.TICKETS_URL, data=data)
-        self.assertEqual(response.status_code, 400)
-        self.assertListEqual(expected_data, response.data)
-
-    def test_order_tickets_without_pokerboard(self: APITestCase) -> None:
-        """
-        Test change ticket ordering without pokerboard
-        """
-        ranks = [2, 1]
-        data = []
-        expected_data = [
-            {
-                "pokerboard": [
-                    "This field is required."
-                ]
-            },
-            {
-                "pokerboard": [
-                    "This field is required."
-                ]
-            },
-        ]
-        for ticket, rank in zip(self.tickets, ranks):
-            obj = {
-                "ticket_id": ticket.ticket_id,
-                "rank": rank
-            }
-            data.append(obj)
-
-        response = self.client.put(self.TICKETS_URL, data=data)
+        response = self.client.put(reverse("order-tickets", args=[self.pokerboard.id]), data=data, format="json")
         self.assertEqual(response.status_code, 400)
         self.assertListEqual(expected_data, response.data)

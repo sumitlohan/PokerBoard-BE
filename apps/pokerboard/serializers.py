@@ -2,6 +2,9 @@ import json
 from typing import Any
 from typing_extensions import OrderedDict
 
+from django.db.models import IntegerField
+from django.db.models.expressions import Case, When
+
 from rest_framework import serializers
 
 from apps.pokerboard import (
@@ -9,7 +12,7 @@ from apps.pokerboard import (
     models as pokerboard_models,
     utils as pokerboard_utils
 )
-import apps.user.serializers as user_serializers
+from apps.user import serializers as user_serializers
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -19,7 +22,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = pokerboard_models.Ticket
-        fields = ["id", "ticket_id", "pokerboard", "estimate", "rank"]
+        fields = ["id", "ticket_id", "estimate", "rank"]
 
 
 class PokerboardSerializer(serializers.ModelSerializer):
@@ -91,11 +94,16 @@ class TicketOrderSerializer(serializers.ListSerializer):
         """
         Order tickets according to ticket_id's
         """
-        pokerboard = validated_data[0]["pokerboard"]
+        pokerboard = self.context.get('pk')
         ticket_ids = list(map(lambda x: x["ticket_id"], validated_data))
-        tickets = pokerboard_models.Ticket.objects.filter(ticket_id__in=ticket_ids, pokerboard=pokerboard).all()
+        tickets = pokerboard_models.Ticket.objects.filter(ticket_id__in=ticket_ids, pokerboard=pokerboard)\
+                    .order_by(Case(
+                        *[When(ticket_id=n, then=i) for i, n in enumerate(ticket_ids)],
+                        output_field=IntegerField(),
+                    ))\
+                    .all()
         for ticket, updated_ticket in zip(tickets, validated_data):
             ticket.rank = updated_ticket.get('rank')
-        updated_tickets = pokerboard_models.Ticket.objects.bulk_update(tickets, ['rank'])
+        pokerboard_models.Ticket.objects.bulk_update(tickets, ['rank'])
 
         return validated_data

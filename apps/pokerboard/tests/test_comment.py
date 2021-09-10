@@ -1,9 +1,13 @@
+import json
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from ddf import G
 from rest_framework.test import APITestCase
 
+from apps.pokerboard.tests import mock_data as pokerboard_mock_data
 from apps.user import models as user_models
 
 
@@ -25,9 +29,12 @@ class CommentTestCases(APITestCase):
         """
         Test Get comments for an issue
         """
-        response = self.client.get(f"{self.COMMENTS_URL}?issueId=KD-4")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(type(response.data), list)
+        with patch("apps.pokerboard.utils.requests.request") as mock_get:
+            mock_get.return_value.status_code = 200
+            mock_get.return_value.text = json.dumps(pokerboard_mock_data.COMMENTS_REPONSE)
+            response = self.client.get(f"{self.COMMENTS_URL}?issueId=KD-4")
+            self.assertEqual(response.status_code, 200)
+            self.assertListEqual(response.data, pokerboard_mock_data.COMMENTS_REPONSE["comments"])
 
     def test_post_comments(self: APITestCase) -> None:
         """
@@ -37,24 +44,12 @@ class CommentTestCases(APITestCase):
             "comment": "Hello there",
             "issue": "KD-2"
         }
-        response = self.client.post(self.COMMENTS_URL, data=data)
-        self.assertEqual(response.status_code, 201)
-        self.assertDictEqual(response.data, data)
-
-    def test_post_comments_with_invalid_issue(self: APITestCase) -> None:
-        """
-        Test post comment with invalid issue
-        """
-        data = {
-            "comment": "Hello there",
-            "issue": "KD-267"
-        }
-        expected_data = [
-            "Issue does not exist or you do not have permission to see it."
-        ]
-        response = self.client.post(self.COMMENTS_URL, data=data)
-        self.assertEqual(response.status_code, 400)
-        self.assertListEqual(expected_data, response.data)
+        with patch("apps.pokerboard.utils.requests.request") as mock_get:
+            mock_get.return_value.status_code = 201
+            mock_get.return_value.text = "{}"
+            response = self.client.post(self.COMMENTS_URL, data=data)
+            self.assertEqual(response.status_code, 201)
+            self.assertDictEqual(response.data, data)
 
     def test_post_comments_with_invalid_comment(self: APITestCase) -> None:
         """

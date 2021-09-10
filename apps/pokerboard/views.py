@@ -5,10 +5,9 @@ from typing_extensions import OrderedDict
 from django.db.models.query import QuerySet
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, ListAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.pokerboard import (
@@ -42,14 +41,14 @@ class PokerboardApiView(ModelViewSet):
             .prefetch_related("tickets")
 
 
-class JqlAPIView(APIView):
+class JqlAPIView(RetrieveAPIView):
     """
     Search By jql
     Get Issues for a project - project IN ("<project-name>")
     Get issues for a sprint - sprint IN ("sprint-name")
     Get issues from issues Id's list - issues IN ("KD-1", "KD-2")
     """
-    def get(self: APIView, request: OrderedDict) -> Response:
+    def get(self: RetrieveAPIView, request: OrderedDict) -> Response:
         """
         Fetch JQL response given a JQL statement
         """
@@ -60,16 +59,16 @@ class JqlAPIView(APIView):
         return Response(res, status=status.HTTP_200_OK)
 
 
-class SuggestionsAPIView(APIView):
+class SuggestionsAPIView(RetrieveAPIView):
     """
     Get projects and sprints list from JIRA
     """
-    def get(self: APIView, request: OrderedDict) -> Response:
+    def get(self: RetrieveAPIView, request: OrderedDict) -> Response:
         """
         Fetch available sprints and projects
         """
         sprints = pokerboard_utils.get_all_sprints()
-        project_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_PROJECTS)
+        project_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_PROJECTS_URL)
         response = {
             "projects": project_res["results"],
             "sprints": sprints
@@ -83,7 +82,7 @@ class CommentApiView(CreateAPIView, ListAPIView):
     """
     serializer_class = pokerboard_serializers.CommentSerializer
 
-    def get(self, request):
+    def get(self: ListAPIView, request: OrderedDict) -> Response:
         """
         Get comments on a JIRA ticket
         """
@@ -105,18 +104,18 @@ class CommentApiView(CreateAPIView, ListAPIView):
         pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
 
 
-class TicketOrderApiView(APIView):
+class TicketOrderApiView(UpdateAPIView):
     """
     Ticket order API for ordering tickets
     """
     serializer_class = pokerboard_serializers.TicketOrderSerializer
     queryset = pokerboard_models.Ticket.objects.all()
 
-    def put(self, request):
+    def put(self: UpdateAPIView, request: OrderedDict, pk: int=None) -> Response:
         """
         Changes ticket ordering
         """
-        serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data)
+        serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, context={"pk": pk})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)

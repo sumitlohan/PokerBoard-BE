@@ -147,8 +147,8 @@ class PokerboardTestCases(APITestCase):
             "tickets": []
         }
         expected_data = {
-            "non_field_errors": [
-                "Error in JQL Query: Expecting either a value, list or function but got ')'. You must surround ')' in quotation marks to use it as a value. (line 1, character 11)"
+            "tickets": [
+                "This field is required."
             ]
         }
         response = self.client.post(self.POKERBOARD_URL, data=data)
