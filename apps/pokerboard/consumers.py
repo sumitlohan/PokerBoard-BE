@@ -2,12 +2,12 @@ import json
 from datetime import datetime
 
 from django.contrib.auth.models import AnonymousUser
-from django.db.utils import IntegrityError
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework import serializers
 
 from apps.pokerboard import (
+    constants as pokerboard_constants,
     models as pokerboard_models,
     serializers as pokerboard_serializers,
     utils as pokerboard_utils,
@@ -17,6 +17,9 @@ from apps.user import serializers as user_serializers
 
 class SessionConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        """
+        Runs on connection initiate
+        """
         session_id = self.scope['url_route']['kwargs']['pk']
         self.room_name = str(session_id)
         self.room_group_name = 'session_%s' % self.room_name
@@ -48,6 +51,9 @@ class SessionConsumer(AsyncWebsocketConsumer):
         )
 
     async def estimate(self, event):
+        """
+        Finalize estimation of a ticket
+        """
         try:
             manager = self.session.ticket.pokerboard.manager
             if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
@@ -56,8 +62,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 ticket = self.session.ticket
                 ticket.estimate = event["message"]["estimate"]
 
-                # TODO: replace this url with constants url
-                url = f"https://kaam-dhandha.atlassian.net/rest/api/2/issue/{ticket.ticket_id}"
+                url = f"{pokerboard_constants.JIRA_API_URL_V2}issue/{ticket.ticket_id}"
                 data = json.dumps({
                     "update": {
                         'customfield_10016': [
@@ -80,6 +85,9 @@ class SessionConsumer(AsyncWebsocketConsumer):
             }))
 
     async def skip(self, event):
+        """
+        Skip current voting session
+        """
         manager = self.session.ticket.pokerboard.manager
         if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
             self.session.status = pokerboard_models.GameSession.SKIPPED
@@ -89,6 +97,9 @@ class SessionConsumer(AsyncWebsocketConsumer):
             }
 
     async def initialise_game(self, event):
+        """
+        Initialise game, fetches connceted users and votes already given
+        """
         votes = pokerboard_models.Vote.objects.filter(
             game_session=self.session)
         vote_serializer = pokerboard_serializers.VoteSerializer(
@@ -105,6 +116,9 @@ class SessionConsumer(AsyncWebsocketConsumer):
         }
 
     async def vote(self, event):
+        """
+        Places/update a vote on a ticket
+        """
         try:
             serializer = pokerboard_serializers.VoteSerializer(
                 data=event["message"])
@@ -123,6 +137,9 @@ class SessionConsumer(AsyncWebsocketConsumer):
             }))
 
     async def start_timer(self, event):
+        """
+        Starts timer on current voting session
+        """
         manager = self.session.ticket.pokerboard.manager
         if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
             now = datetime.now()
@@ -134,10 +151,16 @@ class SessionConsumer(AsyncWebsocketConsumer):
             }
 
     def myconverter(self, o):
+        """
+        convert datetime into json
+        """
         if isinstance(o, datetime):
             return o.__str__()
 
     async def receive(self, text_data):
+        """
+        Runs on recieving any message, acts as a gateway of websocket communication
+        """
         try:
             text_data_json = json.loads(text_data)
             serializer = pokerboard_serializers.MessageSerializer(
@@ -166,9 +189,15 @@ class SessionConsumer(AsyncWebsocketConsumer):
             }))
 
     async def broadcast(self, event):
+        """
+        Broadcast a message to connected channels in current group
+        """
         await self.send(text_data=json.dumps(event["message"]))
 
     async def disconnect(self, code):
+        """
+        Runs when a user disconnects
+        """
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.remove(self.scope["user"])
         setattr(self.channel_layer, self.room_group_name, clients)

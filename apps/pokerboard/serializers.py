@@ -89,6 +89,9 @@ class CommentSerializer(serializers.Serializer):
 
 
 class TicketOrderSerializer(serializers.ListSerializer):
+    """
+    Ticket order serializer for changing ticket ordering
+    """
     child = TicketSerializer()
     def create(self: serializers.ListSerializer, validated_data: list) -> list:
         """
@@ -110,6 +113,9 @@ class TicketOrderSerializer(serializers.ListSerializer):
 
 
 class VoteSerializer(serializers.ModelSerializer):
+    """
+    Vote serializer for creating/listing votes
+    """
     user = user_serializers.UserSerializer(read_only=True)
     class Meta:
         model = pokerboard_models.Vote
@@ -120,7 +126,10 @@ class VoteSerializer(serializers.ModelSerializer):
             }
         }
 
-    def create(self, validated_data):
+    def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> Any:
+        """
+        Place/update a vote
+        """
         try:
             #if user is changing his vote
             vote = pokerboard_models.Vote.objects.get(user_id=validated_data['user'].id, 
@@ -133,6 +142,9 @@ class VoteSerializer(serializers.ModelSerializer):
             return super().create(validated_data)
 
 class GameSessionSerializer(serializers.ModelSerializer):
+    """
+    Gamesession serializer
+    """
     ticket = TicketSerializer()
     
     class Meta:
@@ -146,22 +158,34 @@ class GameSessionSerializer(serializers.ModelSerializer):
     
 
 class CreateGameSessionSerializer(GameSessionSerializer):
+    """
+    Create gamesession serializer
+    """
     ticket = serializers.PrimaryKeyRelatedField(queryset=pokerboard_models.Ticket.objects.only("id"))
     status = serializers.ChoiceField(choices=pokerboard_models.GameSession.STATUS_CHOICES, required=False)
 
-    def validate_ticket(self, attrs):
+    def validate_ticket(self:GameSessionSerializer, attrs: OrderedDict) -> Any:
+        """
+        Checks if a gamesession already in progress for a pokerboard
+        """
         active_sessions = pokerboard_models.GameSession.objects.filter(ticket__pokerboard=attrs.pokerboard, status=pokerboard_models.GameSession.IN_PROGRESS).count()
         if active_sessions > 0:
             raise serializers.ValidationError("An active game session already exists for this pokerboard")
         return attrs
 
-    def create(self, validated_data):
+    def create(self: GameSessionSerializer, validated_data: OrderedDict) -> Any:
+        """
+        Creates a game session
+        """
         validated_data["status"] = pokerboard_models.GameSession.IN_PROGRESS
         validated_data["timer_started_at"] = None
         return super().create(validated_data)
 
 
 class MessageSerializer(serializers.Serializer):
+    """
+    Message serializer for validating a message
+    """
     message_type = serializers.ChoiceField(choices=pokerboard_constants.MESSAGE_TYPES)
     message = serializers.OrderedDict()
 

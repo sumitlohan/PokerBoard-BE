@@ -5,7 +5,7 @@ from typing_extensions import OrderedDict
 from django.db.models.query import QuerySet
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
+from rest_framework.generics import CreateAPIView, GenericAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import ModelViewSet
@@ -131,21 +131,33 @@ class GameSessionApi(CreateAPIView, RetrieveAPIView):
     """
     queryset = pokerboard_models.GameSession.objects.all()
 
-    def get_serializer_class(self):
+    def get_serializer_class(self: GenericAPIView) -> Serializer:
+        """
+        Gets serializer class based on request type
+        """
         if self.request.method == "POST":
             return pokerboard_serializers.CreateGameSessionSerializer
         return pokerboard_serializers.GameSessionSerializer
 
-    def get_object(self):
+    def get_object(self: RetrieveAPIView) -> pokerboard_models.GameSession:
+        """
+        Get active gamesession for a pokerboard
+        """
         pk = self.kwargs.get('pk')
         active_gamesession = self.queryset.filter(ticket__pokerboard=pk, status=pokerboard_models.GameSession.IN_PROGRESS).first()
         return active_gamesession
 
 
 class VoteApiView(ListAPIView):
+    """
+    Get votes by a user
+    """
     serializer_class = pokerboard_serializers.VoteSerializer
 
-    def get_queryset(self):
+    def get_queryset(self: ListAPIView) -> QuerySet:
+        """
+        Get votes by a user
+        """
         votes = pokerboard_models.Vote.objects.filter(user=self.request.user).exclude(game_session__ticket__estimate=None)
         return votes
     

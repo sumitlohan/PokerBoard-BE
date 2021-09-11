@@ -11,9 +11,6 @@ def query_jira(method, url, payload="{}", status_code=200):
     Perform a request and returns response
     """
     response = requests.request(method, url, headers=pokerboard_constants.JIRA_HEADERS, data=payload)
-    print("start")
-    print(response)
-    print("End")
     if response.status_code != status_code:
         error_msgs = ["Something went wrong"]
         try:
@@ -26,8 +23,9 @@ def query_jira(method, url, payload="{}", status_code=200):
     return json.loads(result)
 
 def validate_vote(deck_type, estimate):
-    print(deck_type)
-    print(estimate)
+    """
+    Validates a vote based on deck type
+    """
     if deck_type == "EVEN":
         if estimate % 2 == 1:
             raise ValidationError("Invalid estimate")
