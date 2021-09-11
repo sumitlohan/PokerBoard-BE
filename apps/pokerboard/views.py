@@ -2,21 +2,21 @@ import json
 from typing import Any
 from typing_extensions import OrderedDict
 
-from django.conf import settings
 from django.db.models.query import QuerySet
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 import apps.invite.models as invite_models
-import apps.pokerboard.constants as pokerboard_constants 
-import apps.pokerboard.models as pokerboard_models
-import apps.pokerboard.serializers as pokerboard_serializers
-import apps.pokerboard.utils as pokerboard_utils 
+from apps.pokerboard import (
+    constants as pokerboard_constants,
+    models as pokerboard_models,
+    serializers as pokerboard_serializers,
+    utils as pokerboard_utils
+)
 
 
 class PokerboardApiView(ModelViewSet):
@@ -25,7 +25,7 @@ class PokerboardApiView(ModelViewSet):
     """
 
     http_method_names = ["get", "post"]
-    
+
     def get_serializer_class(self: ModelViewSet) -> Serializer:
         """
         Get serializer class based on request's method
@@ -46,14 +46,14 @@ class PokerboardApiView(ModelViewSet):
         return queryset
 
 
-class JqlAPIView(APIView):
+class JqlAPIView(RetrieveAPIView):
     """
     Search By jql
     Get Issues for a project - project IN ("<project-name>")
     Get issues for a sprint - sprint IN ("sprint-name")
     Get issues from issues Id's list - issues IN ("KD-1", "KD-2")
     """
-    def get(self: APIView, request: OrderedDict) -> Response:
+    def get(self: RetrieveAPIView, request: OrderedDict) -> Response:
         """
         Fetch JQL response given a JQL statement
         """
@@ -64,16 +64,16 @@ class JqlAPIView(APIView):
         return Response(res, status=status.HTTP_200_OK)
 
 
-class SuggestionsAPIView(APIView):
+class SuggestionsAPIView(RetrieveAPIView):
     """
     Get projects and sprints list from JIRA
     """
-    def get(self: APIView, request: OrderedDict) -> Response:
+    def get(self: RetrieveAPIView, request: OrderedDict) -> Response:
         """
         Fetch available sprints and projects
         """
         sprints = pokerboard_utils.get_all_sprints()
-        project_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_PROJECTS)
+        project_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_PROJECTS_URL)
         response = {
             "projects": project_res["results"],
             "sprints": sprints
@@ -86,7 +86,15 @@ class CommentApiView(CreateAPIView, ListAPIView):
     Comment on a Ticket on JIRA
     """
     serializer_class = pokerboard_serializers.CommentSerializer
-    
+
+    def get(self: ListAPIView, request: OrderedDict) -> Response:
+        """
+        Get comments on a JIRA ticket
+        """
+        issueId = request.GET.get("issueId")
+        response = pokerboard_utils.query_jira(method="GET", url=f"{pokerboard_constants.JIRA_API_URL_V2}issue/{issueId}/comment")
+        return Response(response["comments"], status=status.HTTP_200_OK)
+
     def perform_create(self: CreateAPIView, serializer: Serializer) -> Any:
         """
         Comments on a JIRA ticket
@@ -97,23 +105,24 @@ class CommentApiView(CreateAPIView, ListAPIView):
         payload = json.dumps({
             "body": comment
         })
-        
         pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
 
 
-class TicketOrderApiView(APIView):
+class TicketOrderApiView(UpdateAPIView):
     """
     Ticket order API for ordering tickets
     """
     serializer_class = pokerboard_serializers.TicketOrderSerializer
     queryset = pokerboard_models.Ticket.objects.all()
 
-    def put(self, request):
-        serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, partial=True)
+    def put(self: UpdateAPIView, request: OrderedDict, pk: int=None) -> Response:
+        """
+        Changes ticket ordering
+        """
+        serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, context={"pk": pk})
         serializer.is_valid(raise_exception=True)
-        print(serializer.validated_data)
         serializer.save()
-        return Response(status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class GameSessionApi(CreateAPIView, RetrieveAPIView):
@@ -139,3 +148,4 @@ class VoteApiView(ListAPIView):
     def get_queryset(self):
         votes = pokerboard_models.Vote.objects.filter(user=self.request.user).exclude(game_session__ticket__estimate=None)
         return votes
+    
