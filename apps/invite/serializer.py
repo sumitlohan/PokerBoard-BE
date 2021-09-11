@@ -1,23 +1,24 @@
-from apps import invite
 from rest_framework import  serializers
 
-from apps.invite.models import Invite
-from apps.group.models import Group, GroupMember
+import apps.invite.models as invite_models
+import apps.group.models as group_models
+import apps.pokerboard.models as pokerboard_models
 
-        
 
-class InviteUserSerializer(serializers.ModelSerializer):
-    """
-    Checking if user/ group is already invited and group exists
-    Sending invitation to those eligible
-    """
+class PokerboardMemberSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Invite
-        fields = ['invitee', 'pokerboard', 'group', 'role', 'is_accepted', 'group_name']
+        model = invite_models.Invite
+        fields = ['id', 'invitee', 'pokerboard', 'group', 'role', 'is_accepted', 'group_name']
         extra_kwargs = {
             'is_accepted': {'read_only': True},
             'group': {'read_only': True},
         }
+
+class InviteUserSerializer(PokerboardMemberSerializer):
+    """
+    Checking if user/ group is already invited and group exists
+    Sending invitation to those eligible
+    """
 
     def validate(self, attrs):
         """
@@ -28,14 +29,14 @@ class InviteUserSerializer(serializers.ModelSerializer):
         pokerboard = attrs.get('pokerboard')
 
         if invitee:
-            if Invite.objects.filter(pokerboard=pokerboard, invitee=invitee, group=None):
+            if invite_models.Invite.objects.filter(pokerboard=pokerboard, invitee=invitee, group=None):
                 raise serializers.ValidationError("User already invited")
         else:
-            group = Group.objects.filter(name=group_name).first()
+            group = group_models.Group.objects.filter(name=group_name).first()
             if not group:
                 raise serializers.ValidationError("Group does not exist")
             else:
-                if Invite.objects.filter(pokerboard=pokerboard, group=group):
+                if invite_models.Invite.objects.filter(pokerboard=pokerboard, group=group):
                     raise serializers.ValidationError("Group already invited")
             attrs['group'] = group
         return attrs
@@ -49,10 +50,10 @@ class InviteUserSerializer(serializers.ModelSerializer):
         role = validated_data['role']
 
         if invitee:
-            Invite.objects.create(pokerboard=pokerboard, invitee=invitee, role=role)
+            invite_models.Invite.objects.create(pokerboard=pokerboard, invitee=invitee, role=role)
         else:
             group = validated_data['group']
-            members = GroupMember.objects.filter(group=group)
+            members = group_models.GroupMember.objects.filter(group=group)
             for member in members:
-                Invite.objects.create(invitee=str(member.user), pokerboard=pokerboard, group=group, role=role)
+                invite_models.Invite.objects.create(invitee=str(member.user), pokerboard=pokerboard, group=group, role=role)
         return validated_data

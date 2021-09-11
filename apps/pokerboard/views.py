@@ -6,12 +6,13 @@ from django.conf import settings
 from django.db.models.query import QuerySet
 
 from rest_framework import status
-from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+import apps.invite.models as invite_models
 import apps.pokerboard.constants as pokerboard_constants 
 import apps.pokerboard.models as pokerboard_models
 import apps.pokerboard.serializers as pokerboard_serializers
@@ -37,7 +38,12 @@ class PokerboardApiView(ModelViewSet):
         """
         Get pokerboards a user can access
         """
-        return pokerboard_models.Pokerboard.objects.filter(manager=self.request.user).prefetch_related("tickets")
+        queryset = pokerboard_models.Pokerboard.objects.filter(manager=self.request.user)\
+                    .prefetch_related("tickets")
+        invites = invite_models.Invite.objects.filter(invitee=self.request.user).filter(is_accepted=True)
+        for invite in invites:
+            queryset |= pokerboard_models.Pokerboard.objects.filter(title=invite.pokerboard)
+        return queryset
 
 
 class JqlAPIView(APIView):
@@ -52,7 +58,7 @@ class JqlAPIView(APIView):
         Fetch JQL response given a JQL statement
         """
         jql = request.GET.get("jql")
-        url = f"{settings.JIRA_URL}search?jql={jql}"
+        url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
         res = pokerboard_utils.query_jira("GET", url)
         return Response(res, status=status.HTTP_200_OK)
@@ -66,40 +72,48 @@ class SuggestionsAPIView(APIView):
         """
         Fetch available sprints and projects
         """
-        sprint_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_SPRINTS)
+        sprints = pokerboard_utils.get_all_sprints()
         project_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_PROJECTS)
         response = {
             "projects": project_res["results"],
-            "sprints": sprint_res["values"]
+            "sprints": sprints
         }
         return Response(response, status=status.HTTP_200_OK)
 
 
-class CommentApiView(CreateAPIView):
+class CommentApiView(CreateAPIView, ListAPIView):
     """
     Comment on a Ticket on JIRA
     """
     serializer_class = pokerboard_serializers.CommentSerializer
+    
     def perform_create(self: CreateAPIView, serializer: Serializer) -> Any:
         """
         Comments on a JIRA ticket
         """
         issue = serializer.validated_data["issue"]
         comment = serializer.validated_data["comment"]
-        url = f"{settings.JIRA_URL}issue/{issue}/comment"
+        url = f"{pokerboard_constants.JIRA_API_URL_V2}issue/{issue}/comment"
         payload = json.dumps({
             "body": comment
         })
         
-        response = pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
+        pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
 
 
-class TicketOrderApiView(UpdateAPIView):
+class TicketOrderApiView(APIView):
     """
     Ticket order API for ordering tickets
     """
     serializer_class = pokerboard_serializers.TicketOrderSerializer
     queryset = pokerboard_models.Ticket.objects.all()
+
+    def put(self, request):
+        serializer = pokerboard_serializers.TicketOrderSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        print(serializer.validated_data)
+        serializer.save()
+        return Response(status=status.HTTP_200_OK)
 
 
 class GameSessionApi(CreateAPIView, RetrieveAPIView):

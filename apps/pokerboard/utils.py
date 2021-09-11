@@ -30,3 +30,13 @@ def validate_vote(deck_type, estimate):
     elif deck_type == "FIBONACCI":
         if estimate not in pokerboard_constants.FIBONACCI_OPTIONS:
             raise ValidationError("Invalid estimate")
+
+
+def get_all_sprints():
+    boards_url = f"{pokerboard_constants.JIRA_API_URL_V1}board"
+    boards_res = query_jira("GET", boards_url)
+    sprints = []
+    for board in boards_res["values"]:
+        sprint_res = query_jira("GET", f"{pokerboard_constants.JIRA_API_URL_V1}board/{board['id']}/sprint")
+        sprints = sprints + sprint_res["values"]
+    return sprints

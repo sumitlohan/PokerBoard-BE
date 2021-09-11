@@ -1,24 +1,28 @@
 from django.db import models
 
-from apps.user.models import CustomBase
-from apps.group.models import Group
-from apps.pokerboard.models import Pokerboard
+import apps.user.models as user_models
+import apps.group.models as group_models
+import apps.pokerboard.models as pokerboard_models
 
-class Invite(CustomBase):
+class Invite(user_models.CustomBase):
     """
-    Invite model
+    Invite model => stores invitee details, pokerboard to which invited,
+    group_name (if invited through group), role of invitee, whether invitation is accepted
+    or not
     """
+    SPECTATOR = 1
+    CONTRIBUTOR = 2
     ROLE = (
-        ("SPECTATOR", "Spectator"),
-        ("CONTRIBUTOR", "Contributor"),
-        ("GUEST", "Guest")
+        (SPECTATOR, "Spectator"),
+        (CONTRIBUTOR, "Contributor"),
     )
     invitee = models.EmailField(null=True, help_text="Person invited")
-    pokerboard = models.ForeignKey(Pokerboard, on_delete=models.CASCADE, help_text="Pokerboard")
+    pokerboard = models.ForeignKey(pokerboard_models.Pokerboard, on_delete=models.CASCADE, 
+                    help_text="Pokerboard")
     group_name = models.CharField(max_length=20, null=True, help_text="Name of group")
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True,
+    group = models.ForeignKey(group_models.Group, on_delete=models.CASCADE, null=True,
             help_text="Name of group through which invited, if invited via group")
-    role = models.CharField(choices=ROLE, max_length=20, help_text="Role")
+    role = models.IntegerField(choices=ROLE, help_text="Role", default=CONTRIBUTOR)
     is_accepted = models.BooleanField(default=False, help_text="Accepted or not?")
 
     def __str__(self):

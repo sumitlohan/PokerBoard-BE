@@ -1,8 +1,10 @@
 from rest_framework import serializers
 
-import apps.user.models as user_models
-import apps.user.serializers as user_serializers
 import apps.group.models as group_models
+from apps.user import (
+    models as user_models,
+    serializers as user_serializers
+)
 
 
 class GroupMemberSerializer(serializers.ModelSerializer):
@@ -34,8 +36,8 @@ class AddGroupMemberSerializer(serializers.Serializer):
         user = user_models.User.objects.filter(email=email).first()
         if not user:
             raise serializers.ValidationError("No such user")
-        member = group_models.GroupMember.objects.filter(user=user, group=group)
-        if member:
+        member = group_models.GroupMember.objects.filter(user=user, group=group).count()
+        if member > 0:
             raise serializers.ValidationError("A member can't be added to a group twice")
         attrs["user"] = user
         return attrs

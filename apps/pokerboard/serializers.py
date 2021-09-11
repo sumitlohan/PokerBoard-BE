@@ -3,17 +3,20 @@ from typing import Any
 from typing_extensions import OrderedDict
 
 from django.conf import settings
+from django.db import connection
 
 from rest_framework import serializers
 
+import apps.pokerboard.constants as pokerboard_constants
 import apps.pokerboard.models as pokerboard_models
 import apps.pokerboard.utils as pokerbord_utils
 from apps.pokerboard.constants import MESSAGE_TYPES
 import apps.user.serializers as user_serializers
 
+
 class TicketSerializer(serializers.ModelSerializer):
     """
-    Ticket serializer for displaing ticket details
+    Ticket serializer for displaying ticket details
     """
 
     class Meta:
@@ -51,16 +54,17 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         """
         Validates list of tickets by calling an API
         """
+        attrs = super().validate(attrs)
         tickets = attrs["tickets"]
+        # removing [] from ["KD-1", "KD-2"]. ["KD-1", "KD-2"] -> "KD-1", "KD-2"
         ticket_ids = json.dumps(tickets)[1:-1]
         jql = f"issue IN ({ticket_ids})"
-        url = f"{settings.JIRA_URL}search?jql={jql}"
+        url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
-        response = pokerbord_utils.query_jira("GET", url)
-        request = self.context.get("request")
-        manager = request.user
-        attrs["manager"] = manager
-        return super().validate(attrs)
+        # validate ticket Id's
+        pokerbord_utils.query_jira("GET", url)
+        attrs["manager"] = self.context.get("request").user
+        return attrs
     
     def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> OrderedDict:
         """
@@ -82,30 +86,16 @@ class CommentSerializer(serializers.Serializer):
     issue = serializers.SlugField()
 
 
-class TicketOrderSerializer(serializers.ModelSerializer):
-    """
-    Ticket order serializer for moving tickets UP and DOWN in ranks.
-    """
-    direction = serializers.CharField()
+class TicketOrderSerializer(serializers.ListSerializer):
+    child = TicketSerializer()
+    def create(self, validated_data):
+        print(len(connection.queries))
+        tickets = [pokerboard_models.Ticket.objects.get(ticket_id=ticket.get('ticket_id')) for ticket in validated_data]
+        for ticket, updated_ticket in zip(tickets, validated_data):
+            ticket.rank = updated_ticket.get('rank')
+        updated_tickets = pokerboard_models.Ticket.objects.bulk_update(tickets, ['rank'])
+        print(len(connection.queries))
 
-    class Meta:
-        model = pokerboard_models.Ticket
-        fields = ["direction"]
-
-    def update(self: serializers.ModelSerializer, instance: pokerboard_models.Ticket, validated_data: OrderedDict) -> OrderedDict:
-        """
-        Updates the rank of a ticket
-        """
-        rank = instance.rank
-        direction = validated_data["direction"]
-        second_rank = rank -1 if direction == "UP" else rank+1
-        second_ticket = pokerboard_models.Ticket.objects.filter(pokerboard=instance.pokerboard, rank=second_rank).first()
-        if not second_ticket:
-            raise serializers.ValidationError(f"Can't go {direction}")
-        second_ticket.rank = rank
-        instance.rank = second_rank
-        second_ticket.save()
-        instance.save()
         return validated_data
 
 
