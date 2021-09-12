@@ -3,7 +3,7 @@ import requests
 
 from rest_framework.serializers import ValidationError
 
-import apps.pokerboard.constants as pokerboard_constants 
+from apps.pokerboard import constants as pokerboard_constants
 
 
 def query_jira(method, url, payload={}, status_code=200):
@@ -21,11 +21,30 @@ def query_jira(method, url, payload={}, status_code=200):
         raise ValidationError(error_msgs)
     return json.loads(response.text)
 
-def get_all_sprints():
+
+def get_sprints(boardId):
+    """
+    Get sprints for a given board
+    """
+    sprint_res = query_jira("GET", f"{pokerboard_constants.JIRA_API_URL_V1}board/{boardId}/sprint")
+    return sprint_res["values"]
+
+
+def get_boards():
+    """
+    Get all available boards
+    """
     boards_url = f"{pokerboard_constants.JIRA_API_URL_V1}board"
     boards_res = query_jira("GET", boards_url)
+    return boards_res["values"]
+
+
+def get_all_sprints():
+    """
+    Fetches all sprints from all available boards
+    """
+    boards = get_boards()
     sprints = []
-    for board in boards_res["values"]:
-        sprint_res = query_jira("GET", f"{pokerboard_constants.JIRA_API_URL_V1}board/{board['id']}/sprint")
-        sprints = sprints + sprint_res["values"]
+    for board in boards:
+        sprints = sprints + get_sprints(board["id"])
     return sprints
