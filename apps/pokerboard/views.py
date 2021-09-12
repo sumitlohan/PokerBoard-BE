@@ -152,12 +152,12 @@ class VoteApiView(ListAPIView):
     """
     Get votes by a user
     """
-    serializer_class = pokerboard_serializers.VoteSerializer
+    serializer_class = pokerboard_serializers.TicketSerializer
 
-    def get_queryset(self: ListAPIView) -> QuerySet:
+    def get_queryset(self):
         """
         Get votes by a user
         """
-        votes = pokerboard_models.Vote.objects.filter(user=self.request.user).exclude(game_session__ticket__estimate=None)
-        return votes
+        tickets = pokerboard_models.Ticket.objects.filter(estimations__votes__user=self.request.user).exclude(estimate=None).distinct()
+        return tickets
     
