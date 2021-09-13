@@ -1,10 +1,13 @@
-from collections import OrderedDict
-
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
+from ddf import G
 from rest_framework.test import APITestCase
 
-from apps.group import models as group_models
+from apps.group import (
+    constants as pokerboard_constants,
+    models as group_models,
+)
 from apps.user import models as user_models
 
 
@@ -19,16 +22,11 @@ class GroupTestCases(APITestCase):
         """
         Setup method for creating default user and it's token
         """
-        data = {
-            "email": "rohit@gmail.com",
-            "password": "root",
-            "first_name": "Rohit",
-            "last_name": "Jain",
-        }
 
-        self.user = user_models.User.objects.create(**data)
-        self.token = user_models.Token.objects.create(user=self.user).key
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        self.user = G(get_user_model())
+        token = G(user_models.Token, user=self.user)
+        self.group = G(group_models.Group, created_by=self.user, name="Kung fu panda")
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
     def test_create_group(self):
         """
@@ -37,25 +35,48 @@ class GroupTestCases(APITestCase):
         data = {
             "name": "Dominos"
         }
-        response = self.client.post(self.GROUP_URL, data=data, format="json")
-        res_data = response.data
-        member = res_data["members"][0]["user"]
+        response = self.client.post(self.GROUP_URL, data=data)
+        expected_member = group_models.GroupMember.objects.get(group__name="Dominos")
+        group = expected_member.group
+        expected_data = {
+            "id": group.id,
+            "name": group.name,
+            "created_by": self.user.id,
+            "created_at": group.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+            "updated_at": group.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+            "members": [
+                {
+                    "id": expected_member.id,
+                    "group": expected_member.group.id,
+                    "user": {
+                        "id": expected_member.user.id,
+                        "email": expected_member.user.email,
+                        "first_name": expected_member.user.first_name,
+                        "last_name": expected_member.user.last_name,
+                    },
+                    "created_at": expected_member.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                    "updated_at": expected_member.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                }
+            ]
+        }
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(res_data["name"], data["name"])
-        self.assertEqual(res_data["created_by"], self.user.id)
-        self.assertEqual(len(res_data["members"]), 1)
-        self.assertEqual(member["email"], self.user.email)
+        self.assertDictEqual(expected_data, response.data)
 
     def test_create_group_unique_name(self):
         """
         Creates group, expects 400 response code on non-unique name
         """
-        group_models.Group.objects.create(created_by=self.user, name="Dominos")
         data = {
-            "name": "Dominos"
+            "name": self.group.name,
         }
-        response = self.client.post(self.GROUP_URL, data=data, format="json")
+        expected_data = {
+            "name": [
+                "group with this name already exists."
+            ]
+        }
+        response = self.client.post(self.GROUP_URL, data=data)
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
 
     def test_create_group_failure_empty_name(self):
         """
@@ -64,44 +85,93 @@ class GroupTestCases(APITestCase):
         data = {
             "name": ""
         }
-        response = self.client.post(self.GROUP_URL, data=data, format="json")
+        expected_data = {
+            "name": [
+                "This field may not be blank."
+            ]
+        }
+        response = self.client.post(self.GROUP_URL, data=data)
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
 
-    def test_create_group_failure_no_name(self):
+    def test_create_group_failure_without_name(self):
         """
         Create group, expects bad request on no group name
         """
         data = {}
-        response = self.client.post(self.GROUP_URL, data=data, format="json")
+        expected_data = {
+            "name": [
+                "This field is required."
+            ]
+        }
+        response = self.client.post(self.GROUP_URL, data=data)
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
 
     def test_list_group(self):
         """
         Get group list, checks for only group's name
         """
-        group_models.Group.objects.create(created_by=self.user, name="Kung fu panda")
         response = self.client.get(self.GROUP_URL)
-        res_data = response.data
+        expected_member = group_models.GroupMember.objects.get(group=self.group)
+
+        expected_data = [
+            {
+                "id": self.group.id,
+                "name": self.group.name,
+                "created_by": self.user.id,
+                "created_at": self.group.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                "updated_at": self.group.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                "members": [
+                    {
+                        "id": expected_member.id,
+                        "group": expected_member.group.id,
+                        "user": {
+                            "id": expected_member.user.id,
+                            "email": expected_member.user.email,
+                            "first_name": expected_member.user.first_name,
+                            "last_name": expected_member.user.last_name,
+                        },
+                        "created_at": expected_member.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                        "updated_at": expected_member.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                    }
+                ]
+            }
+        ]
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(res_data), 1)
-        group = res_data[0]
-        self.assertEqual(group["name"], "Kung fu panda")
+        self.assertListEqual(expected_data, response.data)
 
     def test_get_group_details(self):
         """
         Get group details by groupId, Expects 200 response code
         """
-        group = group_models.Group.objects.create(created_by=self.user, name="Kung fu panda")
-        response = self.client.get(reverse('groups-detail', args=[group.id]))
-        res_data = response.data
+        expected_member = group_models.GroupMember.objects.get(group=self.group)
+        expected_data = {
+            "id": self.group.id,
+            "name": self.group.name,
+            "created_by": self.user.id,
+            "created_at": self.group.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+            "updated_at": self.group.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+            "members": [
+                {
+                    "id": expected_member.id,
+                    "group": expected_member.group.id,
+                    "user": {
+                        "id": expected_member.user.id,
+                        "email": expected_member.user.email,
+                        "first_name": expected_member.user.first_name,
+                        "last_name": expected_member.user.last_name,
+                    },
+                    "created_at": expected_member.created_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                    "updated_at": expected_member.updated_at.strftime(pokerboard_constants.DATETIME_FORMAT),
+                }
+            ]
+        }
+        response = self.client.get(reverse('groups-detail', args=[self.group.id]))
         self.assertEqual(response.status_code, 200)
-        member = res_data["members"][0]["user"]
-        self.assertEqual(res_data["name"], "Kung fu panda")
-        self.assertEqual(res_data["created_by"], self.user.id)
-        self.assertEqual(len(res_data["members"]), 1)
-        self.assertEqual(member["email"], self.user.email)
+        self.assertDictEqual(expected_data, response.data)
 
-    def test_get_group_details_failure(self):
+    def test_get_group_details_not_found(self):
         """
         Get group details by groupId, Expects 404 on invalid groupId
         """
@@ -112,61 +182,89 @@ class GroupTestCases(APITestCase):
         """
         Add member to group, Expects 201 response code
         """
-        group = group_models.Group.objects.create(created_by=self.user, name="Kung fu panda")
-        user = user_models.User.objects.create(email="sample@sample.com", password="Qwerty*1234")
+        user = G(get_user_model())
         data = {
-            "group": group.id,
+            "group": self.group.id,
             "email": user.email
         }
-        response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
-        res_data = response.data
+        response = self.client.post(self.CREATE_MEMBER_URL, data=data)
+        expected_member = group_models.GroupMember.objects.get(group=self.group, user=user)   
+        expected_data = {
+            "group": expected_member.group.id,
+            "user": {
+                "id": expected_member.user.id,
+                "email": expected_member.user.email,
+                "first_name": expected_member.user.first_name,
+                "last_name": expected_member.user.last_name,
+            }
+        }
         self.assertEqual(response.status_code, 201)
-        self.assertEqual(res_data["group"], group.id)
-        self.assertEqual(type(res_data["user"]), OrderedDict)
-        self.assertEqual(res_data["user"]["id"], user.id)
+        self.assertDictEqual(response.data, expected_data)
 
-    def test_add_member_failure_no_email(self):
+    def test_add_member_failure_without_email(self):
         """
         Add member to group, Expects 400 response code on not providing email
         """
-        group = group_models.Group.objects.create(created_by=self.user, name="Kung fu panda")
         data = {
-            "group": group.id
+            "group": self.group.id
         }
-        response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
+        expected_data = {
+            "email": [
+                "This field is required."
+            ]
+        }
+        response = self.client.post(self.CREATE_MEMBER_URL, data=data)
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
     
-    def test_add_member_failure_no_group(self):
+    def test_add_member_failure_without_group(self):
         """
         Add member to group, Expects 400 response code on not providing group
         """
-        user = user_models.User.objects.create(email="sample@sample.com", password="Qwerty*1234")
+        user_2 = G(get_user_model())
         data = {
-            "email": user.email
+            "email": user_2.email
         }
-        response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
+        expected_data = {
+            "group": [
+                "This field is required."
+            ]
+        }
+
+        response = self.client.post(self.CREATE_MEMBER_URL, data=data)
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
     
     def test_add_member_multiple_times(self):
         """
         Add member to group, Expects 400 response code on adding a member two times
         """
-        group = group_models.Group.objects.create(created_by=self.user, name="Kung fu panda")
         data = {
-            "group": group.id,
+            "group": self.group.id,
             "email": self.user.email
         }
-        response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
+        expected_data = {
+            "non_field_errors": [
+                "A member can't be added to a group twice"
+            ]
+        }
+        response = self.client.post(self.CREATE_MEMBER_URL, data=data)
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
 
     def test_add_member_for_non_existing_member(self):
         """
         Add member to group, Expects 400 response code on providing unregistered email
         """
-        group = group_models.Group.objects.create(created_by=self.user, name="Kung fu panda")
         data = {
-            "group": group.id,
+            "group": self.group.id,
             "email": "dummy@dummy.com"
         }
-        response = self.client.post(self.CREATE_MEMBER_URL, data=data, format='json')
+        expected_data = {
+            "non_field_errors": [
+                "No such user"
+            ]
+        }
+        response = self.client.post(self.CREATE_MEMBER_URL, data=data)
         self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)

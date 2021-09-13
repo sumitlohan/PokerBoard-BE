@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-import apps.group.models as group_models
+from apps.group import models as group_models
 
 
 admin.site.register(group_models.Group)

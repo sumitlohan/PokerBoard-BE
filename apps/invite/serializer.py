@@ -51,7 +51,8 @@ class InviteUserSerializer(PokerboardMemberSerializer):
             invite_models.Invite.objects.create(pokerboard=pokerboard, invitee=invitee, role=role)
         else:
             group = validated_data['group']
+            group_name = validated_data['group_name']
             members = group_models.GroupMember.objects.filter(group=group)
             for member in members:
-                invite_models.Invite.objects.create(invitee=str(member.user), pokerboard=pokerboard, group=group, role=role)
+                invite_models.Invite.objects.create(invitee=str(member.user), pokerboard=pokerboard, group=group, group_name=group_name, role=role)
         return validated_data
