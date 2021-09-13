@@ -145,8 +145,8 @@ class GameSessionSerializer(serializers.ModelSerializer):
     """
     Gamesession serializer
     """
-    ticket = TicketSerializer()
-    
+    ticket = serializers.PrimaryKeyRelatedField(queryset=pokerboard_models.Ticket.objects.only())
+
     class Meta:
         model = pokerboard_models.GameSession
         fields = ["id", "ticket", "status", "timer_started_at"]
@@ -155,16 +155,13 @@ class GameSessionSerializer(serializers.ModelSerializer):
                 "required": False
             }
         }
-    
 
-class CreateGameSessionSerializer(GameSessionSerializer):
-    """
-    Create gamesession serializer
-    """
-    ticket = serializers.PrimaryKeyRelatedField(queryset=pokerboard_models.Ticket.objects.only("id"))
-    status = serializers.ChoiceField(choices=pokerboard_models.GameSession.STATUS_CHOICES, required=False)
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["ticket"] = TicketSerializer(instance=instance.ticket).data
+        return rep
 
-    def validate_ticket(self:GameSessionSerializer, attrs: OrderedDict) -> Any:
+    def validate_ticket(self:serializers.ModelSerializer, attrs: OrderedDict) -> Any:
         """
         Checks if a gamesession already in progress for a pokerboard
         """
@@ -173,7 +170,7 @@ class CreateGameSessionSerializer(GameSessionSerializer):
             raise serializers.ValidationError("An active game session already exists for this pokerboard")
         return attrs
 
-    def create(self: GameSessionSerializer, validated_data: OrderedDict) -> Any:
+    def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> Any:
         """
         Creates a game session
         """

@@ -130,14 +130,7 @@ class GameSessionApi(CreateAPIView, RetrieveAPIView):
     Game session API for creating game and fetching active game session
     """
     queryset = pokerboard_models.GameSession.objects.all()
-
-    def get_serializer_class(self: GenericAPIView) -> Serializer:
-        """
-        Gets serializer class based on request type
-        """
-        if self.request.method == "POST":
-            return pokerboard_serializers.CreateGameSessionSerializer
-        return pokerboard_serializers.GameSessionSerializer
+    serializer_class = pokerboard_serializers.GameSessionSerializer
 
     def get_object(self: RetrieveAPIView) -> pokerboard_models.GameSession:
         """
