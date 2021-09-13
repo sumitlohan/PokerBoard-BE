@@ -1,9 +1,7 @@
 from rest_framework import  serializers
 
-import apps.invite.models as invite_models
-import apps.group.models as group_models
-import apps.pokerboard.models as pokerboard_models
-
+from apps.group import models as group_models
+from apps.invite import models as invite_models
 
 class PokerboardMemberSerializer(serializers.ModelSerializer):
     class Meta:

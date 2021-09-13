@@ -2,15 +2,17 @@ import json
 from typing import Any
 from typing_extensions import OrderedDict
 
-from django.conf import settings
-from django.db import connection
+from django.db.models import IntegerField
+from django.db.models.expressions import Case, When
 
 from rest_framework import serializers
 
-import apps.pokerboard.constants as pokerboard_constants
-import apps.pokerboard.models as pokerboard_models
-import apps.pokerboard.utils as pokerbord_utils
-import apps.user.serializers as user_serializers
+from apps.pokerboard import (
+    constants as pokerboard_constants,
+    models as pokerboard_models,
+    utils as pokerboard_utils
+)
+from apps.user import serializers as user_serializers
 
 
 class TicketSerializer(serializers.ModelSerializer):
@@ -20,7 +22,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = pokerboard_models.Ticket
-        fields = ["id", "ticket_id", "pokerboard", "estimate", "rank"]
+        fields = ["id", "ticket_id", "estimate", "rank"]
 
 
 class PokerboardSerializer(serializers.ModelSerializer):
@@ -61,10 +63,10 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
         # validate ticket Id's
-        pokerbord_utils.query_jira("GET", url)
+        pokerboard_utils.query_jira("GET", url)
         attrs["manager"] = self.context.get("request").user
         return attrs
-    
+
     def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> OrderedDict:
         """
         Creates Pokerboard object and list of Ticket objects
@@ -87,12 +89,21 @@ class CommentSerializer(serializers.Serializer):
 
 class TicketOrderSerializer(serializers.ListSerializer):
     child = TicketSerializer()
-    def create(self, validated_data):
-        print(len(connection.queries))
-        tickets = [pokerboard_models.Ticket.objects.get(ticket_id=ticket.get('ticket_id')) for ticket in validated_data]
+
+    def create(self: serializers.ListSerializer, validated_data: list) -> list:
+        """
+        Order tickets according to ticket_id's
+        """
+        pokerboard = self.context.get('pk')
+        ticket_ids = list(map(lambda x: x["ticket_id"], validated_data))
+        tickets = pokerboard_models.Ticket.objects.filter(ticket_id__in=ticket_ids, pokerboard=pokerboard)\
+                    .order_by(Case(
+                        *[When(ticket_id=n, then=i) for i, n in enumerate(ticket_ids)],
+                        output_field=IntegerField(),
+                    ))\
+                    .all()
         for ticket, updated_ticket in zip(tickets, validated_data):
             ticket.rank = updated_ticket.get('rank')
-        updated_tickets = pokerboard_models.Ticket.objects.bulk_update(tickets, ['rank'])
-        print(len(connection.queries))
+        pokerboard_models.Ticket.objects.bulk_update(tickets, ['rank'])
 
         return validated_data

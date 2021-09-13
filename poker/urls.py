@@ -8,5 +8,5 @@ urlpatterns = [
     path('groups/', include('apps.group.urls')),
     path('accounts/', include('apps.user.urls')),
     path('pokerboards/', include('apps.pokerboard.urls')),
-    path('', include('apps.invite.urls')),
+    path('members/', include('apps.invite.urls')),
 ]

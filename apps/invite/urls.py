@@ -7,5 +7,5 @@ urlpatterns = [
       path('invite', invite_views.InviteUserApi.as_view(), name='invite'),
       path('invite/<int:pk>', invite_views.AcceptInviteApi.as_view(), name='accept-invite'),
       path('remove/<int:pk>', invite_views.RemoveInviteeApi.as_view(), name='remove-invitee'),
-      path('members/<int:pk>', invite_views.PokerboardMembersApi.as_view(), name='members')
+      path('<int:pk>', invite_views.PokerboardMembersApi.as_view(), name='members')
 ]

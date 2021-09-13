@@ -4,10 +4,12 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.viewsets import ModelViewSet
 
-import apps.invite.models as invite_models
-import apps.invite.serializer as invite_serializers
-import apps.invite.permissions as invite_permissions
-import apps.pokerboard.models as pokerboard_models
+from apps.invite import (
+    models as invite_models,
+    serializer as invite_serializers,
+    permissions as invite_permissions
+)
+from apps.pokerboard import models as pokerboard_models
 
 
 class PokerboardMembersApi(ListAPIView):
