@@ -22,6 +22,7 @@ class Setting(Settings):
     ]
 
     LOCAL_APPS = [
+        'apps.group.app_config.GroupConfig',
         'apps.user.app_config.UserConfig',
     ]
 
@@ -72,6 +73,9 @@ class Setting(Settings):
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
             "apps.user.authentication.CustomTokenAuthentication",
+        ],
+        'DEFAULT_PERMISSION_CLASSES': [
+            "rest_framework.permissions.IsAuthenticated",
         ],
     }
 
