@@ -10,12 +10,19 @@ class Invite(user_models.CustomBase):
     group_name (if invited through group), role of invitee, whether invitation is accepted
     or not
     """
+    EMAIL = 1
+    GROUP = 2
+    INVITE_TYPE = (
+        (EMAIL, "email"),
+        (GROUP, "group")
+    )
     SPECTATOR = 1
     CONTRIBUTOR = 2
     ROLE = (
         (SPECTATOR, "Spectator"),
         (CONTRIBUTOR, "Contributor"),
     )
+    type = models.IntegerField(choices=INVITE_TYPE, help_text="Invited through", default=EMAIL)
     invitee = models.EmailField(null=True, help_text="Person invited")
     pokerboard = models.ForeignKey(pokerboard_models.Pokerboard, related_name="invite", on_delete=models.CASCADE, 
                     help_text="Pokerboard")
