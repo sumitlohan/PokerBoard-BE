@@ -1,12 +1,12 @@
 from django.core import exceptions
-from django.contrib.auth import hashers, authenticate
+from django.contrib.auth import authenticate, hashers
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 from rest_framework import serializers as rest_framework_serializers
 
 from apps.user import(
     constants as user_constants,
-    models as user_models
+    models as user_models,
 )
 
 
@@ -22,12 +22,10 @@ class UserSerializer(rest_framework_serializers.ModelSerializer):
             'password': {'write_only': True},
         }
 
-    def create(self, validated_data):
-        """
-        Hashing the password and creating a new user
-        """
-        validated_data['password'] = hashers.make_password(validated_data['password'])
-        return super().create(validated_data)
+    def save(self, **kwargs):
+        if 'password' in self.validated_data:
+            self.validated_data['password'] = hashers.make_password(self.validated_data['password'])
+        return super().save(**kwargs)
 
 
 class AccountVerificationSerializer(rest_framework_serializers.Serializer):
