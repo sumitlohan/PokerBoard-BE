@@ -63,13 +63,13 @@ def validate_vote(deck_type, estimate):
     """
     Validates a vote based on deck type
     """
-    if deck_type == "EVEN":
+    if deck_type == pokerboard_models.Pokerboard.EVEN:
         if estimate % 2 == 1:
             raise ValidationError("Invalid estimate")
-    elif deck_type == "ODD":
+    elif deck_type == pokerboard_models.Pokerboard.ODD:
         if estimate % 2 == 0:
             raise ValidationError("Invalid estimate")
-    elif deck_type == "FIBONACCI":
+    elif deck_type == pokerboard_models.Pokerboard.FIBONACCI:
         if estimate not in pokerboard_constants.FIBONACCI_OPTIONS:
             raise ValidationError("Invalid estimate")
 

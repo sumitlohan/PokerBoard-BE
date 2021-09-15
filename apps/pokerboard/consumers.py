@@ -73,7 +73,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
                         ]
                     }
                 })
-                pokerboard_utils.query_jira(
+                pokerboard_utils.JiraApi.query_jira(
                     "PUT", url, payload=data, status_code=204)
                 ticket.save()
                 return {
