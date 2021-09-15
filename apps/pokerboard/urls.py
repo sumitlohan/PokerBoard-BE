@@ -6,6 +6,7 @@ from rest_framework.routers import SimpleRouter
 from apps.pokerboard import views as pokerboard_views
 
 router = SimpleRouter(trailing_slash=False)
+router.register('members', pokerboard_views.PokerboardMembersApi, basename="members")
 router.register('',pokerboard_views.PokerboardApiView, basename="pokerboards")
 
 urlpatterns = [

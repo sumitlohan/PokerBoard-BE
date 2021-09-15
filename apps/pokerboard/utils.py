@@ -6,62 +6,52 @@ from rest_framework.serializers import ValidationError
 from apps.pokerboard import constants as pokerboard_constants
 
 
-def query_jira(method, url, payload="{}", status_code=200):
+class JiraApi:
     """
-    Perform a request and returns response
+    Jira API Utilities
     """
-    response = requests.request(method, url, headers=pokerboard_constants.JIRA_HEADERS, data=payload)
-    if response.status_code != status_code:
-        error_msgs = ["Something went wrong"]
-        try:
+
+    @staticmethod
+    def query_jira(method, url, payload=None, status_code=200):
+        """
+        Perform a request and returns response
+        """
+        if not payload:
+            payload = {}
+        response = requests.request(method, url, headers=pokerboard_constants.JIRA_HEADERS, data=payload)
+        if response.status_code != status_code:
+            error_msgs = ["Something went wrong"]
             res = json.loads(response.text)
-            error_msgs = res["errorMessages"]
-        except Exception:
-            pass
-        raise ValidationError(error_msgs)
-    result = response.text if response.text else "{}"
-    return json.loads(result)
+            error_msgs = res.get("errorMessages", error_msgs)
+            raise ValidationError(error_msgs)
+        if not response.text:
+            return {}
+        return json.loads(response.text)
 
-def validate_vote(deck_type, estimate):
-    """
-    Validates a vote based on deck type
-    """
-    if deck_type == "EVEN":
-        if estimate % 2 == 1:
-            raise ValidationError("Invalid estimate")
-    elif deck_type == "ODD":
-        if estimate % 2 == 0:
-            raise ValidationError("Invalid estimate")
-    elif deck_type == "FIBONACCI":
-        if estimate not in pokerboard_constants.FIBONACCI_OPTIONS:
-            raise ValidationError("Invalid estimate")
+    @staticmethod
+    def get_sprints(boardId):
+        """
+        Get sprints for a given board
+        """
+        sprint_res = JiraApi.query_jira("GET", f"{pokerboard_constants.JIRA_API_URL_V1}board/{boardId}/sprint")
+        return sprint_res["values"]
 
-        
+    @staticmethod
+    def get_boards():
+        """
+        Get all available boards
+        """
+        boards_url = f"{pokerboard_constants.JIRA_API_URL_V1}board"
+        boards_res = JiraApi.query_jira("GET", boards_url)
+        return boards_res["values"]
 
-
-def get_sprints(boardId):
-    """
-    Get sprints for a given board
-    """
-    sprint_res = query_jira("GET", f"{pokerboard_constants.JIRA_API_URL_V1}board/{boardId}/sprint")
-    return sprint_res["values"]
-
-
-def get_boards():
-    """
-    Get all available boards
-    """
-    boards_url = f"{pokerboard_constants.JIRA_API_URL_V1}board"
-    boards_res = query_jira("GET", boards_url)
-    return boards_res["values"]
-
-
-def get_all_sprints():
-    """
-    Fetches all sprints from all available boards
-    """
-    boards = get_boards()
-    sprints = []
-    for board in boards:
-        sprints = sprints + get_sprints(board["id"])
-    return sprints
+    @staticmethod
+    def get_all_sprints():
+        """
+        Fetches all sprints from all available boards
+        """
+        boards = JiraApi.get_boards()
+        sprints = []
+        for board in boards:
+            sprints = sprints + JiraApi.get_sprints(board["id"])
+        return sprints

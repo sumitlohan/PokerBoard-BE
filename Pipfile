@@ -16,6 +16,7 @@ django-class-settings = "*"
 celery = "*"
 requests = "*"
 channels-redis = "*"
+django-dynamic-fixture = "*"
 
 [dev-packages]
 

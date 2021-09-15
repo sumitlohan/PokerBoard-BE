@@ -2,7 +2,7 @@ from django.urls import path
 
 from rest_framework import routers
 
-import apps.group.views as group_views
+from apps.group import views as group_views
 
 router = routers.SimpleRouter(trailing_slash=False)
 router.register(r'', group_views.GroupViewset, basename="groups")

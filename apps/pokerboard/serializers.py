@@ -7,6 +7,7 @@ from django.db.models.expressions import Case, When
 
 from rest_framework import serializers
 
+from apps.group import models as group_models
 from apps.pokerboard import (
     constants as pokerboard_constants,
     models as pokerboard_models,
@@ -64,7 +65,7 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
         # validate ticket Id's
-        pokerboard_utils.query_jira("GET", url)
+        pokerboard_utils.JiraApi.query_jira("GET", url)
         attrs["manager"] = self.context.get("request").user
         return attrs
 
@@ -90,7 +91,7 @@ class CommentSerializer(serializers.Serializer):
 
 class TicketOrderSerializer(serializers.ListSerializer):
     """
-    Ticket order serializer for changing ticket ordering
+    Ticket order serializer for ordering tickets
     """
     child = TicketSerializer()
     def create(self: serializers.ListSerializer, validated_data: list) -> list:
@@ -98,13 +99,12 @@ class TicketOrderSerializer(serializers.ListSerializer):
         Order tickets according to ticket_id's
         """
         pokerboard = self.context.get('pk')
+        validated_data.sort(key=lambda x: x["ticket_id"])
         ticket_ids = list(map(lambda x: x["ticket_id"], validated_data))
-        tickets = pokerboard_models.Ticket.objects.filter(ticket_id__in=ticket_ids, pokerboard=pokerboard)\
-                    .order_by(Case(
-                        *[When(ticket_id=n, then=i) for i, n in enumerate(ticket_ids)],
-                        output_field=IntegerField(),
-                    ))\
-                    .all()
+        tickets = pokerboard_models.Ticket.objects.filter(
+            ticket_id__in=ticket_ids, 
+            pokerboard=pokerboard
+        ).order_by("ticket_id").all()
         for ticket, updated_ticket in zip(tickets, validated_data):
             ticket.rank = updated_ticket.get('rank')
         pokerboard_models.Ticket.objects.bulk_update(tickets, ['rank'])
@@ -186,3 +186,62 @@ class MessageSerializer(serializers.Serializer):
     message_type = serializers.ChoiceField(choices=pokerboard_constants.MESSAGE_TYPES)
     message = serializers.OrderedDict()
 
+
+class PokerboardMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = pokerboard_models.Invite
+        fields = ['id', 'type', 'invitee', 'pokerboard', 'group', 'role', 'is_accepted', 'group_name']
+        extra_kwargs = {
+            'type': {'write_only': True},
+            'is_accepted': {'read_only': True},
+            'group': {'read_only': True},
+            # 'pokerboard': {'read_only': True}
+        }
+
+
+class InviteUserSerializer(PokerboardMemberSerializer):
+    """
+    Checking if user/ group is already invited and group exists
+    Sending invitation to those eligible
+    """
+
+    def validate(self, attrs):
+        """
+        Checking if user/ group is already invited and if group exists or not
+        """
+        print(self.context.get('request'))
+        type = attrs.get('type')
+        pokerboard = attrs.get('pokerboard')
+        if type==1:
+            invitee = attrs.get('invitee')
+            if pokerboard_models.Invite.objects.filter(pokerboard=pokerboard, invitee=invitee, group=None):
+                raise serializers.ValidationError("User already invited")
+        else:
+            group_name = attrs.get('group_name')
+            group = group_models.Group.objects.filter(name=group_name).first()
+            if not group:
+                raise serializers.ValidationError("Group does not exist")
+            else:
+                if pokerboard_models.Invite.objects.filter(pokerboard=pokerboard, group=group):
+                    raise serializers.ValidationError("Group already invited")
+            attrs['group'] = group
+        return attrs
+
+    def create(self, validated_data):
+        """
+        Sends invite to those eligible
+        """
+        type = validated_data['type']
+        pokerboard = validated_data['pokerboard']
+        role = validated_data['role']
+
+        if type==1:
+            invitee = validated_data['invitee']
+            pokerboard_models.Invite.objects.create(pokerboard=pokerboard, invitee=invitee, role=role)
+        else:
+            group = validated_data['group']
+            group_name = validated_data['group_name']
+            members = group_models.GroupMember.objects.filter(group=group)
+            for member in members:
+                pokerboard_models.Invite.objects.create(invitee=str(member.user), pokerboard=pokerboard, group=group, group_name=group_name, role=role)
+        return validated_data

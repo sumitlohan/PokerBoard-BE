@@ -1,4 +1,4 @@
-import apps.group.models as group_models
+from apps.group import models as group_models
 
 
 def create_default_group_member(**kwargs):
