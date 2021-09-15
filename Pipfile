@@ -17,6 +17,8 @@ celery = "*"
 requests = "*"
 channels-redis = "*"
 django-dynamic-fixture = "*"
+pytest-django = "*"
+pytest-asyncio = "*"
 
 [dev-packages]
 

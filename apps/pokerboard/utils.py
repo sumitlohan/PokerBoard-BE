@@ -3,7 +3,10 @@ import requests
 
 from rest_framework.serializers import ValidationError
 
-from apps.pokerboard import constants as pokerboard_constants
+from apps.pokerboard import (
+    constants as pokerboard_constants,
+    models as pokerboard_models
+)
 
 
 class JiraApi:
@@ -55,3 +58,37 @@ class JiraApi:
         for board in boards:
             sprints = sprints + JiraApi.get_sprints(board["id"])
         return sprints
+
+def validate_vote(deck_type, estimate):
+    """
+    Validates a vote based on deck type
+    """
+    if deck_type == "EVEN":
+        if estimate % 2 == 1:
+            raise ValidationError("Invalid estimate")
+    elif deck_type == "ODD":
+        if estimate % 2 == 0:
+            raise ValidationError("Invalid estimate")
+    elif deck_type == "FIBONACCI":
+        if estimate not in pokerboard_constants.FIBONACCI_OPTIONS:
+            raise ValidationError("Invalid estimate")
+
+
+
+def moveTicketToEnd(ticket):
+    """
+    move a ticket to the end of the list
+    """
+    # costs 2 db hits
+    all_tickets = ticket.pokerboard.tickets.filter(rank__gte=ticket.rank, estimate=None).order_by('rank')
+    prevRank = ticket.rank
+    for t in all_tickets:
+        if t.rank == prevRank:
+            continue
+        temp = t.rank
+        t.rank = prevRank
+        prevRank = temp
+    
+    all_tickets.first().rank = prevRank
+    pokerboard_models.Ticket.objects.bulk_update(all_tickets, ['rank'])
+

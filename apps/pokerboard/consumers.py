@@ -1,5 +1,5 @@
-import json
 from datetime import datetime
+import json
 
 from django.contrib.auth.models import AnonymousUser
 
@@ -33,6 +33,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         )
         if type(self.scope["user"]) == AnonymousUser or session.status != pokerboard_models.GameSession.IN_PROGRESS:
             await self.close()
+            return
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.append(self.scope["user"])
         setattr(self.channel_layer, self.room_group_name, clients)
@@ -79,7 +80,12 @@ class SessionConsumer(AsyncWebsocketConsumer):
                     "type": event["type"],
                     "estimate": event["message"]["estimate"]
                 }
+            else:
+                await self.send(text_data=json.dumps({
+                    "error": "Only manager can finalize estimate"
+                }))
         except serializers.ValidationError as e:
+            print(e)
             await self.send(text_data=json.dumps({
                 "error": "Estimation failed"
             }))
@@ -92,9 +98,15 @@ class SessionConsumer(AsyncWebsocketConsumer):
         if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
             self.session.status = pokerboard_models.GameSession.SKIPPED
             self.session.save()
+            pokerboard_utils.moveTicketToEnd(self.session.ticket)
             return {
                 "type": event["type"],
             }
+        else:
+            await self.send(text_data=json.dumps({
+                "error": "Can't skip"
+            }))
+        
 
     async def initialise_game(self, event):
         """
@@ -149,6 +161,10 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 "type": event["type"],
                 "timer_started_at": json.dumps(now, default=self.myconverter),
             }
+        else:
+            await self.send(text_data=json.dumps({
+                "error": "Can't start timer"
+            }))
 
     def myconverter(self, o):
         """
