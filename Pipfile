@@ -16,6 +16,8 @@ django-class-settings = "*"
 celery = "*"
 requests = "*"
 channels-redis = "*"
+pytest-django = "*"
+pytest-asyncio = "*"
 
 [dev-packages]
 

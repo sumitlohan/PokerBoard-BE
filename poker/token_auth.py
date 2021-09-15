@@ -5,7 +5,7 @@ from channels.middleware import BaseMiddleware
 
 from apps.user.models import Token
 
-@database_sync_to_async
+# @database_sync_to_async
 def get_user(token_key):
     try:
         token = Token.objects.get(key=token_key)
@@ -22,5 +22,5 @@ class TokenAuthMiddleware(BaseMiddleware):
             token_key = (dict((x.split('=') for x in scope['query_string'].decode().split("&")))).get('token', None)
         except ValueError:
             token_key = None
-        scope['user'] = AnonymousUser() if token_key is None else await get_user(token_key)
+        scope['user'] = AnonymousUser() if token_key is None else get_user(token_key)
         return await super().__call__(scope, receive, send)

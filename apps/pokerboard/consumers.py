@@ -1,5 +1,5 @@
-import json
 from datetime import datetime
+import json
 
 from django.contrib.auth.models import AnonymousUser
 
@@ -35,7 +35,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
             await self.close()
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.append(self.scope["user"])
-        setattr(self.channel_layer, self.room_group_name, clients)
+        # setattr(self.channel_layer, self.room_group_name, clients)
         await self.accept()
 
         serializer = user_serializers.UserSerializer(clients, many=True)
@@ -200,7 +200,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         """
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.remove(self.scope["user"])
-        setattr(self.channel_layer, self.room_group_name, clients)
+        # setattr(self.channel_layer, self.room_group_name, clients)
         serializer = user_serializers.UserSerializer(
             list(set(clients)), many=True)
         await self.channel_layer.group_send(

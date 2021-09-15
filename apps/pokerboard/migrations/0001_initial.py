@@ -44,8 +44,6 @@ class Migration(migrations.Migration):
                 ('rank', models.PositiveSmallIntegerField(help_text='Rank of ticket')),
                 ('pokerboard', models.ForeignKey(help_text='Pokerboard to which ticket belongs', on_delete=django.db.models.deletion.CASCADE, related_name='tickets', to='pokerboard.Pokerboard')),
             ],
-            options={
-                'unique_together': {('pokerboard', 'rank')},
-            },
+            options={},
         ),
     ]
