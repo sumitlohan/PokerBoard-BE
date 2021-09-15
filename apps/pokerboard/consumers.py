@@ -22,18 +22,21 @@ class SessionConsumer(AsyncWebsocketConsumer):
         """
         session_id = self.scope['url_route']['kwargs']['pk']
         self.room_name = str(session_id)
-        self.room_group_name = 'session_%s' % self.room_name
-        session = pokerboard_models.GameSession.objects.get(id=session_id)
-        self.session = session
+        self.room_group_name = f"session_{self.room_name}"
+        self.session = pokerboard_models.GameSession.objects.filter(id=session_id).first()
+        if not self.session:
+            await self.close()
+            return
 
         # Join room group
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
         )
-        if type(self.scope["user"]) == AnonymousUser or session.status != pokerboard_models.GameSession.IN_PROGRESS:
+        if type(self.scope["user"]) == AnonymousUser or self.session.status != pokerboard_models.GameSession.IN_PROGRESS:
             await self.close()
             return
+
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.append(self.scope["user"])
         setattr(self.channel_layer, self.room_group_name, clients)
@@ -59,7 +62,6 @@ class SessionConsumer(AsyncWebsocketConsumer):
             manager = self.session.ticket.pokerboard.manager
             if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
                 self.session.status = pokerboard_models.GameSession.ESTIMATED
-                self.session.save()
                 ticket = self.session.ticket
                 ticket.estimate = event["message"]["estimate"]
 
@@ -73,8 +75,8 @@ class SessionConsumer(AsyncWebsocketConsumer):
                         ]
                     }
                 })
-                pokerboard_utils.JiraApi.query_jira(
-                    "PUT", url, payload=data, status_code=204)
+                pokerboard_utils.JiraApi.query_jira("PUT", url, payload=data, status_code=204)
+                self.session.save()
                 ticket.save()
                 return {
                     "type": event["type"],
@@ -112,14 +114,10 @@ class SessionConsumer(AsyncWebsocketConsumer):
         """
         Initialise game, fetches connceted users and votes already given
         """
-        votes = pokerboard_models.Vote.objects.filter(
-            game_session=self.session)
-        vote_serializer = pokerboard_serializers.VoteSerializer(
-            instance=votes, many=True)
-        clients = list(
-            set(getattr(self.channel_layer, self.room_group_name, [])))
-        serializer = user_serializers.UserSerializer(
-            instance=clients, many=True)
+        votes = pokerboard_models.Vote.objects.filter(game_session=self.session)
+        vote_serializer = pokerboard_serializers.VoteSerializer(instance=votes, many=True)
+        clients = list(set(getattr(self.channel_layer, self.room_group_name, [])))
+        serializer = user_serializers.UserSerializer(instance=clients, many=True)
         return {
             "type": event["type"],
             "votes": vote_serializer.data,
@@ -132,8 +130,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         Places/update a vote on a ticket
         """
         try:
-            serializer = pokerboard_serializers.VoteSerializer(
-                data=event["message"])
+            serializer = pokerboard_serializers.VoteSerializer(data=event["message"])
             serializer.is_valid(raise_exception=True)
             pokerboard_utils.validate_vote(
                 self.session.ticket.pokerboard.estimation_type, serializer.validated_data["estimate"])
@@ -143,7 +140,6 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 "vote": serializer.data
             }
         except serializers.ValidationError as e:
-            print(e)
             await self.send(text_data=json.dumps({
                 "error": "Invalid estimate"
             }))
@@ -179,8 +175,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         """
         try:
             text_data_json = json.loads(text_data)
-            serializer = pokerboard_serializers.MessageSerializer(
-                data=text_data_json)
+            serializer = pokerboard_serializers.MessageSerializer(data=text_data_json)
             serializer.is_valid(raise_exception=True)
             message = text_data_json['message']
             message_type = text_data_json['message_type']
@@ -217,8 +212,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.remove(self.scope["user"])
         setattr(self.channel_layer, self.room_group_name, clients)
-        serializer = user_serializers.UserSerializer(
-            list(set(clients)), many=True)
+        serializer = user_serializers.UserSerializer(list(set(clients)), many=True)
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -229,7 +223,4 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 }
             }
         )
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)

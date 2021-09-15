@@ -81,7 +81,6 @@ class Setting(Settings):
         ],
     }
 
-    # WSGI_APPLICATION = 'poker.wsgi.application'
     ASGI_APPLICATION = "poker.asgi.application"
 
     AUTH_PASSWORD_VALIDATORS = [

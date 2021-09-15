@@ -1,7 +1,6 @@
 import json
 from unittest.mock import Mock, patch
 
-from ddf import G
 from rest_framework.test import APITestCase
 
 from apps.pokerboard import (
