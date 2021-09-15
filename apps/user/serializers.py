@@ -67,11 +67,12 @@ class LoginSerializer(rest_framework_serializers.Serializer):
         """
         email = attrs.get('email')
         password = attrs.get('password')
-
         user = authenticate(email=email, password=password)
         if user: 
             if not user.is_active:
                 raise exceptions.ValidationError('User account is disabled.')
+            if not user.is_account_verified:
+                raise exceptions.ValidationError('Please activate your account.')
         else:
             raise exceptions.ValidationError('Unable to log in with provided credentials.')
 

@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.core.validators import RegexValidator
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
@@ -60,7 +59,6 @@ class User(AbstractBaseUser, CustomBase):
     """
     Custom user class
     """
-    PASSWORD_REGEX = RegexValidator(user_constants.PASSWORD_VALIDATION_REGEX, message=user_constants.PASSWORD_VALIDATION_MESSAGE)
     email = models.EmailField(unique=True, help_text='Email Address', max_length=50)
     first_name = models.CharField(max_length=50, help_text="First Name of User")
     last_name = models.CharField(max_length=50, help_text="Last Name of User")
@@ -68,7 +66,7 @@ class User(AbstractBaseUser, CustomBase):
     is_admin = models.BooleanField(
         default=False, help_text="This user has all permissions without explicitly assigning them"
     )
-    password = models.CharField(max_length=150, validators=[PASSWORD_REGEX])
+    password = models.CharField(max_length=150)
     is_account_verified = models.BooleanField(default=False, help_text="This account has verified")
     objects = UserManager()
 
