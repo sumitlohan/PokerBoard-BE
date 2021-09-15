@@ -1,5 +1,7 @@
 import json
-from apps.user.serializers import UserSerializer
+from unittest.mock import patch
+import pytest
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -7,15 +9,12 @@ from channels.testing import WebsocketCommunicator
 from ddf import G
 from rest_framework.test import APITestCase
 
-from poker.asgi import application
 from apps.pokerboard import (
-    consumers as pokerboard_consumers,
     models as pokerboard_models
 )
 from apps.user import models as user_models
+from poker.asgi import application
 
-import pytest
-from unittest import TestCase
 
 class SessionTestCases(APITestCase):
     """
@@ -125,56 +124,187 @@ class SessionTestCases(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertListEqual(expected_data, response.data)
 
-from channels.middleware import BaseMiddleware
-from django.urls import path
-
-from channels.http import AsgiHandler
-from channels.routing import ProtocolTypeRouter, URLRouter
-
-from apps.pokerboard.consumers import SessionConsumer
-
-
 
 @pytest.mark.django_db
 @pytest.mark.asyncio
-async def test_websocket_connection(db):
-    user = G(get_user_model())
-    token = user_models.Token.objects.create(user=user)
-    pokerboard = G(pokerboard_models.Pokerboard, manager=user)
-    ticket = G(pokerboard_models.Ticket, pokerboard=pokerboard, estimate=6)
-    session = G(pokerboard_models.GameSession, ticket=ticket, status=pokerboard_models.GameSession.IN_PROGRESS)
-    communicator = WebsocketCommunicator(application, f"/session/{session.id}?token={token.key}")
-    connected, subprotocol = await communicator.connect()
+class TestWebsocket:
+    """
+    Test websockets
+    """
+    @pytest.fixture
+    def setup(self):
+        """
+        Setup a game session and user
+        """
+        self.user = G(get_user_model())
+        self.token = user_models.Token.objects.create(user=self.user)
+        self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user)
+        self.ticket = G(pokerboard_models.Ticket, pokerboard=self.pokerboard, estimate=6)
+        self.session = G(pokerboard_models.GameSession, ticket=self.ticket, status=pokerboard_models.GameSession.IN_PROGRESS)
+    
+    async def test_websocket_connect(self, setup):
+        """
+        Test websocket connection
+        """
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={self.token.key}")
+        connected, subprotocol = await communicator.connect()
 
-    # await communicator.send_to(text_data="")
-    assert connected
-    res = json.loads(await communicator.receive_from())
-    print(res)
-    assert res["type"] == "join"
-    await communicator.send_json_to({"message_type": "start_timer", "message": "start_timer"})
-    res = json.loads(await communicator.receive_from())
-    print(res)
-    assert res["type"] == "start_timer"
+        assert connected
+        await communicator.receive_from()
+ 
+    async def test_websocket_connect_cannot_connect_estimated_session(self, setup):
+        """
+        Test websocket connection incase of an estimated session
+        """
+        session_2 = G(pokerboard_models.GameSession, status=pokerboard_models.GameSession.ESTIMATED)
+        communicator = WebsocketCommunicator(application, f"/session/{session_2.id}?token={self.token.key}")
+        connected, subprotocol = await communicator.connect()
 
-    await communicator.send_json_to({"message_type": "initialise_game", "message": "initialise_game"})
-    res = json.loads(await communicator.receive_from())
-    print(res)
-    assert res["type"] == "initialise_game"
+        assert not connected
 
-    await communicator.send_json_to({"message_type": "vote", "message": {"estimate": 6}})
-    res = json.loads(await communicator.receive_from())
-    print(res)
-    assert res["type"] == "vote"
+    async def test_websocket_skip(self, setup):
+        """
+        Test skip message
+        """
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={self.token.key}")
+        connected, subprotocol = await communicator.connect()
 
-    await communicator.send_json_to({"message_type": "estimate", "message": {"estimate": 6}})
-    res = json.loads(await communicator.receive_from())
-    print(res)
-    assert res["type"] == "vote"
+        assert connected
+        await communicator.receive_from()
+        await communicator.send_json_to({"message_type": "skip", "message": "skip"})
+        res = json.loads(await communicator.receive_from())
+        expected_data = {"type": "skip"}
+        assert res == expected_data
 
-    await communicator.send_json_to({"message_type": "skip", "message": "skip"})
-    res = json.loads(await communicator.receive_from())
-    print(res)
-    assert res["type"] == "skip"
-    # ["estimate", "skip", "vote", "initialise_game", "start_timer"]
+    async def test_websocket_skip_other_user_cannot_skip(self, setup):
+        """
+        Test skip message, only manager can skip
+        """
+        user_2 = G(get_user_model())
+        token = G(user_models.Token, user=user_2)
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={token.key}")
+        connected, subprotocol = await communicator.connect()
 
+        assert connected
+        await communicator.receive_from()
+        await communicator.send_json_to({"message_type": "skip", "message": "skip"})
+        res = json.loads(await communicator.receive_from())
+        expected_data = {"error": "Can't skip"}
+        assert res == expected_data
+    
+    async def test_websocket_initialise_game(self, setup):
+        """
+        Test initialise game
+        """
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={self.token.key}")
+        connected, subprotocol = await communicator.connect()
+        assert connected
+        await communicator.receive_from()
+
+        await communicator.send_json_to({"message_type": "initialise_game", "message": "initialise_game"})
+        res = json.loads(await communicator.receive_from())
+        expected_data = {
+                            'type': 'initialise_game',
+                            'votes': [],
+                            'users': [
+                                {'id': self.user.id,
+                                'email': self.user.email,
+                                'first_name': self.user.first_name,
+                                'last_name': self.user.last_name
+                                }
+                            ],
+                            'timer': 'null'
+                        }
+        assert res == expected_data
+
+    async def test_websocket_start_timer(self, setup):
+        """
+        Test start timer message
+        """
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={self.token.key}")
+        connected, subprotocol = await communicator.connect()
+        assert connected
+        await communicator.receive_from()
+
+        await communicator.send_json_to({"message_type": "start_timer", "message": "start_timer"})
+        res = json.loads(await communicator.receive_from())
+        assert res["type"] == "start_timer"
+        assert "timer_started_at" in res.keys()
+
+    async def test_websocket_start_timer_other_user_cannot_start_timer(self, setup):
+        """
+        Test start timer message, only manager can start timer
+        """
+        user_2 = G(get_user_model())
+        token = G(user_models.Token, user=user_2)
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={token.key}")
+        connected, subprotocol = await communicator.connect()
+        assert connected
+        await communicator.receive_from()
+
+        await communicator.send_json_to({"message_type": "start_timer", "message": "start_timer"})
+        res = json.loads(await communicator.receive_from())
+        expected_data = {"error": "Can't start timer"}
+        assert res == expected_data
+
+
+    async def test_websocket_vote(self,setup):
+        """
+        Test vote message
+        """
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={self.token.key}")
+        connected, subprotocol = await communicator.connect()
+        assert connected
+        await communicator.receive_from()
+
+        await communicator.send_json_to({"message_type": "vote", "message": {"estimate": 6}})
+        res = json.loads(await communicator.receive_from())
+        vote = pokerboard_models.Vote.objects.get(user=self.user, game_session=self.session)
+        assert vote
+        expected_data = {
+                            'type': 'vote',
+                            'vote': {
+                                "id": vote.id,
+                                "estimate": vote.estimate,
+                                "game_session": self.session.id,
+                                'user': {
+                                    'id': self.user.id,
+                                    'email': self.user.email,
+                                    'first_name': self.user.first_name,
+                                    'last_name': self.user.last_name
+                                },
+                            },
+                        }
+        assert res == expected_data
+
+    async def test_websocket_vote_invalid_estimate(self,setup):
+        """
+        Test vote message with invalid estimate
+        """
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={self.token.key}")
+        connected, subprotocol = await communicator.connect()
+        assert connected
+        await communicator.receive_from()
+
+        await communicator.send_json_to({"message_type": "vote", "message": {}})
+        res = json.loads(await communicator.receive_from())
+        expected_data = {'error': 'Invalid estimate'}
+        assert res == expected_data
+
+    async def test_websocket_estimate_other_user_cannot_estimate(self, setup):
+        """
+        Test estimate message, only manager can finalize estimate
+        """
+        user_2 = G(get_user_model())
+        token = G(user_models.Token, user=user_2)
+        communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={token.key}")
+        connected, subprotocol = await communicator.connect()
+        assert connected
+        await communicator.receive_from()
+
+        await communicator.send_json_to({"message_type": "estimate", "message": {"estimate": 6}})
+        res = json.loads(await communicator.receive_from())
+        expected_data = {"error": "Only manager can finalize estimate"}
+
+    
 

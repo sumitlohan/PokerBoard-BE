@@ -33,9 +33,10 @@ class SessionConsumer(AsyncWebsocketConsumer):
         )
         if type(self.scope["user"]) == AnonymousUser or session.status != pokerboard_models.GameSession.IN_PROGRESS:
             await self.close()
+            return
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.append(self.scope["user"])
-        # setattr(self.channel_layer, self.room_group_name, clients)
+        setattr(self.channel_layer, self.room_group_name, clients)
         await self.accept()
 
         serializer = user_serializers.UserSerializer(clients, many=True)
@@ -79,7 +80,12 @@ class SessionConsumer(AsyncWebsocketConsumer):
                     "type": event["type"],
                     "estimate": event["message"]["estimate"]
                 }
+            else:
+                await self.send(text_data=json.dumps({
+                    "error": "Only manager can finalize estimate"
+                }))
         except serializers.ValidationError as e:
+            print(e)
             await self.send(text_data=json.dumps({
                 "error": "Estimation failed"
             }))
@@ -95,6 +101,11 @@ class SessionConsumer(AsyncWebsocketConsumer):
             return {
                 "type": event["type"],
             }
+        else:
+            await self.send(text_data=json.dumps({
+                "error": "Can't skip"
+            }))
+        
 
     async def initialise_game(self, event):
         """
@@ -149,6 +160,10 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 "type": event["type"],
                 "timer_started_at": json.dumps(now, default=self.myconverter),
             }
+        else:
+            await self.send(text_data=json.dumps({
+                "error": "Can't start timer"
+            }))
 
     def myconverter(self, o):
         """
@@ -200,7 +215,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         """
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.remove(self.scope["user"])
-        # setattr(self.channel_layer, self.room_group_name, clients)
+        setattr(self.channel_layer, self.room_group_name, clients)
         serializer = user_serializers.UserSerializer(
             list(set(clients)), many=True)
         await self.channel_layer.group_send(
