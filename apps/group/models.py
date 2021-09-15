@@ -24,6 +24,6 @@ class GroupMember(user_models.CustomBase):
 
     class Meta:
         unique_together = ('user', 'group')
-        
+
     def __str__(self) -> str:
         return f"{self.user.email} - {self.group.name}"

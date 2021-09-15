@@ -40,9 +40,12 @@ class PokerboardApiView(ModelViewSet):
         """
         Get pokerboards a user can access
         """
-        queryset = pokerboard_models.Pokerboard.objects.filter(manager=self.request.user)\
-                    .prefetch_related("tickets")
-        invites = pokerboard_models.Pokerboard.objects.filter(invite__invitee=self.request.user, invite__is_accepted=True)
+        queryset = pokerboard_models.Pokerboard.objects.filter(
+            manager=self.request.user
+        ).prefetch_related("tickets")
+        invites = pokerboard_models.Pokerboard.objects.filter(
+            invite__invitee=self.request.user, invite__is_accepted=True
+        )
         return (queryset.union(invites))
 
 
@@ -60,7 +63,7 @@ class JqlAPIView(RetrieveAPIView):
         jql = request.GET.get("jql")
         url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
-        res = pokerboard_utils.query_jira("GET", url)
+        res = pokerboard_utils.JiraApi.query_jira("GET", url)
         return Response(res, status=status.HTTP_200_OK)
 
 
@@ -72,8 +75,8 @@ class SuggestionsAPIView(RetrieveAPIView):
         """
         Fetch available sprints and projects
         """
-        sprints = pokerboard_utils.get_all_sprints()
-        project_res = pokerboard_utils.query_jira("GET", pokerboard_constants.GET_PROJECTS_URL)
+        sprints = pokerboard_utils.JiraApi.get_all_sprints()
+        project_res = pokerboard_utils.JiraApi.query_jira("GET", pokerboard_constants.GET_PROJECTS_URL)
         response = {
             "projects": project_res["results"],
             "sprints": sprints
@@ -92,7 +95,7 @@ class CommentApiView(CreateAPIView, ListAPIView):
         Get comments on a JIRA ticket
         """
         issueId = request.GET.get("issueId")
-        response = pokerboard_utils.query_jira(method="GET", url=f"{pokerboard_constants.JIRA_API_URL_V2}issue/{issueId}/comment")
+        response = pokerboard_utils.JiraApi.query_jira(method="GET", url=f"{pokerboard_constants.JIRA_API_URL_V2}issue/{issueId}/comment")
         return Response(response["comments"], status=status.HTTP_200_OK)
 
     def perform_create(self: CreateAPIView, serializer: Serializer) -> Any:
@@ -106,7 +109,7 @@ class CommentApiView(CreateAPIView, ListAPIView):
             "body": comment
         })
 
-        pokerboard_utils.query_jira("POST", url, payload=payload, status_code=201)
+        pokerboard_utils.JiraApi.query_jira("POST", url, payload=payload, status_code=201)
 
 
 class TicketOrderApiView(UpdateAPIView):

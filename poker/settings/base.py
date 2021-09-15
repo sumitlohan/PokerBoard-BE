@@ -40,7 +40,7 @@ class Setting(Settings):
 
     AUTH_GROUP = None
 
-    TOKEN_TTL = 5
+    TOKEN_TTL = 500
 
     MIDDLEWARE = [
         'django.middleware.security.SecurityMiddleware',

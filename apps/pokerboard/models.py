@@ -1,7 +1,9 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 
-import apps.user.models as user_models
+from apps.user import models as user_models
 from apps.group import models as group_models
+
 
 class Pokerboard(user_models.CustomBase):
     """
@@ -18,19 +20,21 @@ class Pokerboard(user_models.CustomBase):
         (FIBONACCI, "Fibonacci"),
     )
 
-    STARTED = 1
-    ENDED = 2
+    CREATED = 1
+    STARTED = 2
+    ENDED = 3
     STATUS_CHOICES = (
+        (CREATED, "Created"),
         (STARTED, "Started"),
         (ENDED, "Ended")
     )
-    manager = models.ForeignKey(user_models.User, on_delete=models.CASCADE, help_text='Owner of Pokerboard')
+    manager = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, help_text='Owner of Pokerboard')
     title = models.CharField(unique=True, max_length=20, help_text='Name of Pokerboard')
     description = models.CharField(max_length=100, help_text='Description')
     estimation_type = models.IntegerField(choices=ESTIMATION_CHOICES, help_text='Estimation type', default=SERIES)
     duration = models.IntegerField(help_text='Duration for voting (in secs)')
-    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=STARTED)
-
+    status = models.PositiveSmallIntegerField(choices=STATUS_CHOICES, default=CREATED)
+    
     def __str__(self) -> str:
         return self.title
 

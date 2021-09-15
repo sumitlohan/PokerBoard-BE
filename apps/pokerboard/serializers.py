@@ -4,7 +4,6 @@ from typing_extensions import OrderedDict
 
 from django.db.models import IntegerField
 from django.db.models.expressions import Case, When
-from django.http import request
 
 from rest_framework import serializers
 
@@ -65,7 +64,7 @@ class CreatePokerboardSerializer(PokerboardSerializer):
         url = f"{pokerboard_constants.JIRA_API_URL_V2}search?jql={jql}"
 
         # validate ticket Id's
-        pokerboard_utils.query_jira("GET", url)
+        pokerboard_utils.JiraApi.query_jira("GET", url)
         attrs["manager"] = self.context.get("request").user
         return attrs
 
@@ -90,6 +89,9 @@ class CommentSerializer(serializers.Serializer):
 
 
 class TicketOrderSerializer(serializers.ListSerializer):
+    """
+    Ticket order serializer for ordering tickets
+    """
     child = TicketSerializer()
 
     def create(self: serializers.ListSerializer, validated_data: list) -> list:
@@ -97,13 +99,12 @@ class TicketOrderSerializer(serializers.ListSerializer):
         Order tickets according to ticket_id's
         """
         pokerboard = self.context.get('pk')
+        validated_data.sort(key=lambda x: x["ticket_id"])
         ticket_ids = list(map(lambda x: x["ticket_id"], validated_data))
-        tickets = pokerboard_models.Ticket.objects.filter(ticket_id__in=ticket_ids, pokerboard=pokerboard)\
-                    .order_by(Case(
-                        *[When(ticket_id=n, then=i) for i, n in enumerate(ticket_ids)],
-                        output_field=IntegerField(),
-                    ))\
-                    .all()
+        tickets = pokerboard_models.Ticket.objects.filter(
+            ticket_id__in=ticket_ids, 
+            pokerboard=pokerboard
+        ).order_by("ticket_id").all()
         for ticket, updated_ticket in zip(tickets, validated_data):
             ticket.rank = updated_ticket.get('rank')
         pokerboard_models.Ticket.objects.bulk_update(tickets, ['rank'])
