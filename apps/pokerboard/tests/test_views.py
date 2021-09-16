@@ -432,9 +432,6 @@ class InviteTestCases(APITestCase):
     Invite testcases for testing invitee list, details and add/remove invitee functionality
     """
     INVITE_URL = reverse('members-list')
-    # ACCEPT_INVITE_URL = reverse('members-detail')
-    # MEMBERS_URL = reverse('members')
-    # REMOVE_MEMBER_URL = reverse('remove-invitee')
 
     def setUp(self):
         """
@@ -445,10 +442,17 @@ class InviteTestCases(APITestCase):
         self.group1 = G(group_models.Group, created_by=self.user, name="Dummy Group")
         self.group2 = G(group_models.Group, created_by=self.user, name="Dummy Group 2")
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user, title="Dummy Pokerboard")
-        self.invite_user = G(pokerboard_models.Invite, type=pokerboard_models.Invite.EMAIL, invitee=self.user.email,
-                            pokerboard=self.pokerboard.id, role=pokerboard_models.Invite.CONTRIBUTOR)
-        self.invite_group = G(pokerboard_models.Invite, type=pokerboard_models.Invite.GROUP, group=self.group1, group_name=self.group1.name,
-                            pokerboard=self.pokerboard.id, role=pokerboard_models.Invite.CONTRIBUTOR)
+        self.invite_user = G(
+                             pokerboard_models.Invite, type=pokerboard_models.Invite.EMAIL,
+                             invitee=self.user.email, pokerboard=self.pokerboard.id, 
+                             role=pokerboard_models.Invite.CONTRIBUTOR
+                            )
+        self.invite_group = G(
+                              pokerboard_models.Invite, type=pokerboard_models.Invite.GROUP,
+                              group=self.group1, group_name=self.group1.name,
+                              pokerboard=self.pokerboard.id, 
+                              role=pokerboard_models.Invite.CONTRIBUTOR
+                            )
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
     def test_invite_user(self):

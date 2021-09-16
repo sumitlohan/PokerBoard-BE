@@ -135,7 +135,7 @@ class InviteUserSerializer(PokerboardMemberSerializer):
         """
         type = attrs.get('type')
         pokerboard = attrs.get('pokerboard')
-        if type==1:
+        if type == pokerboard_models.Invite.EMAIL:
             invitee = attrs.get('invitee')
             if pokerboard_models.Invite.objects.filter(pokerboard=pokerboard, invitee=invitee, group=None):
                 raise serializers.ValidationError("User already invited")
@@ -158,15 +158,21 @@ class InviteUserSerializer(PokerboardMemberSerializer):
         pokerboard = validated_data['pokerboard']
         role = validated_data['role']
 
-        if type==1:
+        if type == pokerboard_models.Invite.EMAIL:
             invitee = validated_data['invitee']
             pokerboard_models.Invite.objects.create(pokerboard=pokerboard, invitee=invitee, role=role)
         else:
             group = validated_data['group']
             group_name = validated_data['group_name']
             members = group_models.GroupMember.objects.filter(group=group)
-            for member in members:
-                pokerboard_models.Invite.objects.create(
-                    invitee=str(member.user), pokerboard=pokerboard, group=group, group_name=group_name, role=role
-                )
+            # for member in members:
+            #     pokerboard_models.Invite.objects.create(
+            #         invitee=str(member.user), pokerboard=pokerboard, group=group, group_name=group_name, role=role
+            #     )
+            pokerboard_models.Invite.objects.bulk_create([
+                pokerboard_models.Invite(
+                    invitee=str(member.user), pokerboard=pokerboard,
+                    group=group, group_name=group_name, role=role
+                ) for member in members
+            ])
         return validated_data
