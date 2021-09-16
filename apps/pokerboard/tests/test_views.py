@@ -253,7 +253,7 @@ class TicketOrderTestCases(APITestCase):
         Setup method for creating default user and it's token
         """
         self.user = G(get_user_model())
-        token = G(user_models.Token, user=self.user)
+        token = G(user_models.Torootken, user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user)
         self.tickets = [
@@ -445,16 +445,16 @@ class InviteTestCases(APITestCase):
         self.group2 = G(group_models.Group, created_by=self.user, name="Dummy Group 2")
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user, title="Dummy Pokerboard")
         self.invite_user = G(
-                             pokerboard_models.Invite, type=pokerboard_models.Invite.EMAIL,
-                             invitee=self.user.email, pokerboard=self.pokerboard.id, 
-                             role=pokerboard_models.Invite.CONTRIBUTOR
-                            )
+            pokerboard_models.Invite, type=pokerboard_models.Invite.EMAIL,
+            invitee=self.user.email, pokerboard=self.pokerboard.id, 
+            role=pokerboard_models.Invite.CONTRIBUTOR
+        )
         self.invite_group = G(
-                              pokerboard_models.Invite, type=pokerboard_models.Invite.GROUP,
-                              group=self.group1, group_name=self.group1.name,
-                              pokerboard=self.pokerboard.id, 
-                              role=pokerboard_models.Invite.CONTRIBUTOR
-                            )
+            pokerboard_models.Invite, type=pokerboard_models.Invite.GROUP,
+            group=self.group1, group_name=self.group1.name,
+            pokerboard=self.pokerboard.id, 
+            role=pokerboard_models.Invite.CONTRIBUTOR
+        )
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
     def test_invite_user(self):

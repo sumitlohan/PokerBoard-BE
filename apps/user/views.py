@@ -3,6 +3,7 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import Serializer
 
 from apps.user import (
     models as user_models,
@@ -36,9 +37,16 @@ class UserProfileView(RetrieveUpdateAPIView):
     """
     Fetching and updating user profile
     """
-    serializer_class = user_serializers.UserSerializer
     queryset = user_models.User.objects.all()
     permission_classes = [IsAuthenticated]
+    
+    def get_serializer_class(self: RetrieveUpdateAPIView) -> Serializer:
+        """
+        Get serializer class based on request's method
+        """
+        if self.request.method == "PATCH":
+            return user_serializers.UserSerializer
+        return user_serializers.UserProfileSerializer
 
 
 class ActivateAccountView(UpdateAPIView):
