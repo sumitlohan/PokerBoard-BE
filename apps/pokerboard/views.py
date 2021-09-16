@@ -46,7 +46,7 @@ class PokerboardApiView(ModelViewSet):
         invites = pokerboard_models.Pokerboard.objects.filter(
             invite__invitee=self.request.user, invite__is_accepted=True
         )
-        return (queryset.union(invites))
+        return (queryset.union(invites).distinct())
 
 
 class JqlAPIView(RetrieveAPIView):
