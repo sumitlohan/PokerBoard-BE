@@ -22,7 +22,7 @@ class Setting(Settings):
     ]
 
     LOCAL_APPS = [
-        'apps.pokerboard',
+        'apps.pokerboard.app_config.PokerboardConfig',
         'apps.group.app_config.GroupConfig',
         'apps.user.app_config.UserConfig',
     ]

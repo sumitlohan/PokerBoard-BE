@@ -2,12 +2,14 @@ import json
 from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
+from django.http import response
 from django.urls import reverse
 from django.utils.http import urlencode
 
 from ddf import G
 from rest_framework.test import APITestCase
 
+from apps.group import models as group_models
 from apps.pokerboard import (
     constants as pokerboard_constants,
     models as pokerboard_models
@@ -423,3 +425,209 @@ class CommentTestCases(APITestCase):
         response = self.client.post(self.COMMENTS_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
+
+
+class InviteTestCases(APITestCase):
+    """
+    Invite testcases for testing invitee list, details and add/remove invitee functionality
+    """
+    INVITE_URL = reverse('members-list')
+
+    def setUp(self):
+        """
+        Setup method for creating default user and it's token
+        """
+        self.user = G(get_user_model())
+        token = G(user_models.Token, user=self.user)
+        self.group1 = G(group_models.Group, created_by=self.user, name="Dummy Group")
+        self.group2 = G(group_models.Group, created_by=self.user, name="Dummy Group 2")
+        self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user, title="Dummy Pokerboard")
+        self.invite_user = G(
+            pokerboard_models.Invite, type=pokerboard_models.Invite.EMAIL,
+            invitee=self.user.email, pokerboard=self.pokerboard.id, 
+            role=pokerboard_models.Invite.CONTRIBUTOR
+        )
+        self.invite_group = G(
+            pokerboard_models.Invite, type=pokerboard_models.Invite.GROUP,
+            group=self.group1, group_name=self.group1.name,
+            pokerboard=self.pokerboard.id, 
+            role=pokerboard_models.Invite.CONTRIBUTOR
+        )
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+    def test_invite_user(self):
+        """
+        Invites user
+        """
+        data = {
+            "type": pokerboard_models.Invite.EMAIL,
+            "invitee": "test@gmail.com",
+            "pokerboard": self.pokerboard.id,
+            "role": pokerboard_models.Invite.CONTRIBUTOR
+        }
+        response = self.client.post(self.INVITE_URL, data=data)
+        invite = pokerboard_models.Invite.objects.get(invitee=data["invitee"], group_name=None)
+        expected_data = {
+            "invitee": invite.invitee,
+            "pokerboard": invite.pokerboard.id,
+            "role": invite.role,
+            "group_name": invite.group_name,
+        }
+        self.assertEqual(response.status_code, 201)
+        self.assertDictEqual(expected_data, response.data)
+
+    def test_invite_group(self):
+        """
+        Invites group
+        """
+        data = {
+            "type": pokerboard_models.Invite.GROUP,
+            "group": self.group2,
+            "group_name": self.group2.name,
+            "pokerboard": self.pokerboard.id,
+            "role": pokerboard_models.Invite.CONTRIBUTOR
+        }
+        response = self.client.post(self.INVITE_URL, data=data)
+        invite = pokerboard_models.Invite.objects.filter(pokerboard=data["pokerboard"], group_name=data["group_name"]).first()
+        expected_data = {
+            "invitee": None,
+            "pokerboard": invite.pokerboard.id,
+            "role": invite.role,
+            "group": invite.group.id,
+            "group_name": invite.group_name
+        }
+        self.assertEqual(response.status_code, 201)
+        self.assertDictEqual(expected_data, response.data)
+
+    def test_user_already_invited(self):
+        """
+        Expects 400 response code on inviting already invited user
+        """
+        data = {
+            "type": pokerboard_models.Invite.EMAIL,
+            "invitee": self.invite_user.invitee,
+            "pokerboard": self.invite_user.pokerboard.id,
+            "role": pokerboard_models.Invite.CONTRIBUTOR
+        }
+        response = self.client.post(self.INVITE_URL, data=data)
+        expected_data = {
+            "non_field_errors":[
+                "User already invited"
+            ]
+        }
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
+    
+    def test_group_already_invited(self):
+        """
+        Expects 400 response code on inviting already invited group
+        """
+        data = {
+            "type": pokerboard_models.Invite.GROUP,
+            "group": self.group1.id,
+            "group_name": self.group1.name,
+            "pokerboard": self.pokerboard.id,
+            "role": pokerboard_models.Invite.CONTRIBUTOR
+        }
+        response = self.client.post(self.INVITE_URL, data=data)
+        expected_data = {
+            "non_field_errors":[
+                "Group already invited"
+            ]
+        }
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
+    
+    def test_group_does_not_exist(self):
+        """
+        Expects 400 response code on inviting a group which does not exist
+        """
+        data = {
+            "type": pokerboard_models.Invite.GROUP,
+            "group": 3,
+            "group_name": "Some unknown group",
+            "pokerboard": self.pokerboard.id,
+            "role": pokerboard_models.Invite.CONTRIBUTOR
+        }
+        response = self.client.post(self.INVITE_URL, data=data)
+        expected_data = {
+            "non_field_errors":[
+                "Group does not exist"
+            ]
+        }
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
+
+    def test_invite_user_failure_incorrect_invitee(self):
+        """
+        Expects 400 response code on incorrect invitee email address
+        """
+        data = {
+            "type": pokerboard_models.Invite.EMAIL,
+            "invitee": "test",
+            "pokerboard": self.pokerboard.id,
+            "role": pokerboard_models.Invite.CONTRIBUTOR
+        }
+        expected_data = {
+            "invitee": [
+                "Enter a valid email address."
+            ]
+        }
+        response = self.client.post(self.INVITE_URL, data=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
+    
+    def test_invalid_role(self):
+        """
+        Expects 400 response code on invalid role
+        """
+        data = {
+            "type": pokerboard_models.Invite.EMAIL,
+            "invitee": "test@gmail.com",
+            "pokerboard": self.pokerboard.id,
+            "role": 3
+        }
+        expected_data = {
+            "role": [
+                "\"3\" is not a valid choice."
+            ]
+        }
+        response = self.client.post(self.INVITE_URL, data=data)
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.data, expected_data)
+
+    def test_accept_invite(self):
+        """
+        Expects 200 response code when requested by correct user
+        """
+        response = self.client.put(reverse('members-detail', args=[self.invite_user.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_members(self):
+        """
+        Get members of a pokerboard who have accepted invitation
+        """
+        self.invite_user.is_accepted = True
+        self.invite_user.save()
+        response = self.client.get(reverse('members-detail', args=[self.pokerboard.id]))
+        expected_member = pokerboard_models.Invite.objects.get(pokerboard=self.pokerboard, is_accepted=True)
+        expected_data = [
+            {
+                "id": expected_member.id,
+                "invitee": expected_member.invitee,
+                "pokerboard": expected_member.pokerboard.id,
+                "group": expected_member.group,
+                "role": expected_member.role,
+                "is_accepted": expected_member.is_accepted,
+                "group_name": expected_member.group_name
+            }
+        ]
+        self.assertEqual(response.status_code, 200)
+        self.assertListEqual(expected_data, response.data)
+
+    def test_remove_member(self):
+        """
+        Expects 200 response code when member is deleted
+        """
+        response = self.client.delete(reverse('members-detail', args=[self.invite_user.id]))
+        self.assertEqual(response.status_code, 200)
