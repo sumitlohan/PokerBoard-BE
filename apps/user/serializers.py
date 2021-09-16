@@ -9,12 +9,14 @@ from apps.user import(
     models as user_models,
 )
 
+from apps.group import models as group_models
+from apps.pokerboard import models as pokerboard_models
+
 
 class UserSerializer(rest_framework_serializers.ModelSerializer):
     """
     Custom User Serializer class
     """
-
     class Meta:
         model = user_models.User
         fields = ['id', 'email', 'first_name', 'last_name', 'password']
@@ -42,7 +44,7 @@ class AccountVerificationSerializer(rest_framework_serializers.Serializer):
         if account_activation_token.check_token(self.instance, attrs):
             return self.instance
         raise rest_framework_serializers.ValidationError(user_constants.EMAIL_VALIDATION_ERROR)
-   
+
     def update(self, user, validated_data):
         """
         Activating user's account
@@ -66,7 +68,7 @@ class LoginSerializer(rest_framework_serializers.Serializer):
         email = attrs.get('email')
         password = attrs.get('password')
         user = authenticate(email=email, password=password)
-        if user: 
+        if user:
             if not user.is_active:
                 raise exceptions.ValidationError('User account is disabled.')
             if not user.is_account_verified:
@@ -92,3 +94,43 @@ class UserTokenSerializer(UserSerializer):
         Creating token for already registered user
         """
         return user_models.Token.objects.create(user=user).key
+
+
+class UserProfileSerializer(rest_framework_serializers.ModelSerializer):
+    """
+    User Profile Serializer
+    """
+    pokerboard = rest_framework_serializers.SerializerMethodField()
+    group = rest_framework_serializers.SerializerMethodField()
+    vote = rest_framework_serializers.SerializerMethodField()
+
+    class Meta:
+        model = user_models.User
+        fields = [
+            'id', 'email', 'first_name', 'last_name', 'pokerboard', 'group', 'vote'
+        ]
+
+    def get_pokerboard(self, user):
+        from apps.pokerboard.serializers import PokerboardSerializer
+
+        boardquery = pokerboard_models.Pokerboard.objects.filter(
+            manager=user
+        ).prefetch_related("tickets")
+        invites = pokerboard_models.Pokerboard.objects.filter(
+            invite__invitee=user, invite__is_accepted=True
+        )
+        return PokerboardSerializer(boardquery.union(invites), many=True).data
+
+    def get_vote(self, user):
+        from apps.pokerboard.serializers import TicketSerializer
+
+        tickets = pokerboard_models.Ticket.objects.filter(
+            estimations__votes__user=user
+        ).exclude(estimate=None).distinct()
+        return TicketSerializer(tickets, many=True).data
+
+    def get_group(self, user):
+        from apps.group import serializer as group_serializers
+
+        groups = group_models.Group.objects.filter(members__user=user)
+        return group_serializers.GroupSerializer(groups, many=True).data
