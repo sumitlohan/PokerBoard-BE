@@ -56,16 +56,16 @@ class GameSession(user_models.CustomBase):
     """
     GameSession model for storing each estimation session's details
     """
-    IN_PROGRESS = "IN_PROGRESS"
-    SKIPPED = "SKIPPED"
-    ESTIMATED = "ESTIMATED"
+    IN_PROGRESS = 1
+    SKIPPED = 2
+    ESTIMATED = 3
     STATUS_CHOICES = (
         (IN_PROGRESS, "In progress"),
         (SKIPPED, "Skipped"),
         (ESTIMATED, "Estimated"),
     )
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="estimations")
-    status = models.CharField(max_length=20, default="IN_PROGRESS", choices=STATUS_CHOICES)
+    status = models.IntegerField(default=IN_PROGRESS, choices=STATUS_CHOICES)
     timer_started_at = models.DateTimeField(null=True)
 
     def __str__(self) -> str:

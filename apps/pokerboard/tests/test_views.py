@@ -651,7 +651,6 @@ class SessionTestCases(APITestCase):
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user)
         self.ticket = G(pokerboard_models.Ticket, pokerboard=self.pokerboard, estimate=6)
 
-
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
 
     def test_create_session(self: APITestCase) -> None:
@@ -694,7 +693,7 @@ class SessionTestCases(APITestCase):
 
     def test_get_active_session_does_not_exist(self: APITestCase) -> None:
         """
-        
+        Test get active session when active session does not exist
         """
         expected_data = {
             "ticket": None,
@@ -707,7 +706,7 @@ class SessionTestCases(APITestCase):
 
     def test_get_active_session(self: APITestCase) -> None:
         """
-        
+        Test get active session
         """
         session = G(pokerboard_models.GameSession, ticket=self.ticket)
         expected_data = {
@@ -727,7 +726,7 @@ class SessionTestCases(APITestCase):
 
     def test_get_votes(self: APITestCase) -> None:
         """
-        
+        Test get votes by a user
         """
         session = G(pokerboard_models.GameSession, ticket=self.ticket)
         vote = G(pokerboard_models.Vote, game_session=session, user=self.user)
@@ -823,17 +822,17 @@ class TestWebsocket:
         await communicator.send_json_to({"message_type": "initialise_game", "message": "initialise_game"})
         res = json.loads(await communicator.receive_from())
         expected_data = {
-                            'type': 'initialise_game',
-                            'votes': [],
-                            'users': [
-                                {'id': self.user.id,
-                                'email': self.user.email,
-                                'first_name': self.user.first_name,
-                                'last_name': self.user.last_name
-                                }
-                            ],
-                            'timer': 'null'
-                        }
+            'type': 'initialise_game',
+            'votes': [],
+            'users': [
+                {'id': self.user.id,
+                'email': self.user.email,
+                'first_name': self.user.first_name,
+                'last_name': self.user.last_name
+                }
+            ],
+            'timer': 'null'
+        }
         assert res == expected_data
 
     async def test_websocket_start_timer(self, setup):
@@ -866,7 +865,6 @@ class TestWebsocket:
         expected_data = {"error": "Can't start timer"}
         assert res == expected_data
 
-
     async def test_websocket_vote(self,setup):
         """
         Test vote message
@@ -881,19 +879,19 @@ class TestWebsocket:
         vote = pokerboard_models.Vote.objects.get(user=self.user, game_session=self.session)
         assert vote
         expected_data = {
-                            'type': 'vote',
-                            'vote': {
-                                "id": vote.id,
-                                "estimate": vote.estimate,
-                                "game_session": self.session.id,
-                                'user': {
-                                    'id': self.user.id,
-                                    'email': self.user.email,
-                                    'first_name': self.user.first_name,
-                                    'last_name': self.user.last_name
-                                },
-                            },
-                        }
+            'type': 'vote',
+            'vote': {
+                "id": vote.id,
+                "estimate": vote.estimate,
+                "game_session": self.session.id,
+                'user': {
+                    'id': self.user.id,
+                    'email': self.user.email,
+                    'first_name': self.user.first_name,
+                    'last_name': self.user.last_name
+                },
+            },
+        }
         assert res == expected_data
 
     async def test_websocket_vote_invalid_estimate(self,setup):
@@ -925,5 +923,3 @@ class TestWebsocket:
         res = json.loads(await communicator.receive_from())
         expected_data = {"error": "Only manager can finalize estimate"}
         assert res == expected_data
-
-        

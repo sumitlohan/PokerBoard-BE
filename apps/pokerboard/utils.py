@@ -85,10 +85,7 @@ def moveTicketToEnd(ticket):
     for t in all_tickets:
         if t.rank == prevRank:
             continue
-        temp = t.rank
-        t.rank = prevRank
-        prevRank = temp
+        t.rank, prevRank = prevRank, t.rank
     
     all_tickets.first().rank = prevRank
     pokerboard_models.Ticket.objects.bulk_update(all_tickets, ['rank'])
-

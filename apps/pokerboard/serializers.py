@@ -2,9 +2,6 @@ import json
 from typing import Any
 from typing_extensions import OrderedDict
 
-from django.db.models import IntegerField
-from django.db.models.expressions import Case, When
-
 from rest_framework import serializers
 
 from apps.group import models as group_models
@@ -132,8 +129,10 @@ class VoteSerializer(serializers.ModelSerializer):
         """
         try:
             #if user is changing his vote
-            vote = pokerboard_models.Vote.objects.get(user_id=validated_data['user'].id, 
-            game_session_id=validated_data['game_session'].id)
+            vote = pokerboard_models.Vote.objects.get(
+                user_id=validated_data['user'].id, 
+                game_session_id=validated_data['game_session'].id
+            )
             vote.estimate = validated_data['estimate']
             vote.save(update_fields=["estimate"])
             return vote
@@ -165,8 +164,11 @@ class GameSessionSerializer(serializers.ModelSerializer):
         """
         Checks if a gamesession already in progress for a pokerboard
         """
-        active_sessions = pokerboard_models.GameSession.objects.filter(ticket__pokerboard=attrs.pokerboard, status=pokerboard_models.GameSession.IN_PROGRESS).count()
-        if active_sessions > 0:
+        active_sessions = pokerboard_models.GameSession.objects.filter(
+            ticket__pokerboard=attrs.pokerboard,
+            status=pokerboard_models.GameSession.IN_PROGRESS
+        ).exists()
+        if active_sessions:
             raise serializers.ValidationError("An active game session already exists for this pokerboard")
         return attrs
 
