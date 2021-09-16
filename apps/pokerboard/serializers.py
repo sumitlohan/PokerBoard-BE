@@ -127,18 +127,17 @@ class VoteSerializer(serializers.ModelSerializer):
         """
         Place/update a vote
         """
-        try:
-            #if user is changing his vote
-            vote = pokerboard_models.Vote.objects.get(
-                user_id=validated_data['user'].id, 
-                game_session_id=validated_data['game_session'].id
-            )
-            vote.estimate = validated_data['estimate']
+        vote, created = pokerboard_models.Vote.objects.get_or_create(
+            user_id=validated_data['user'].id, 
+            game_session_id=validated_data['game_session'].id,
+            defaults={
+                "estimate": validated_data['estimate']
+            }
+        )
+        if not created:
+            vote.estimate = validated_data["estimate"]
             vote.save(update_fields=["estimate"])
-            return vote
-        except:
-            # if vote is not already casted
-            return super().create(validated_data)
+        return vote
 
 class GameSessionSerializer(serializers.ModelSerializer):
     """
