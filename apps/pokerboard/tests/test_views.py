@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
+from django.http import response
 from django.urls import reverse
 from django.utils.http import urlencode
 
@@ -433,9 +434,6 @@ class InviteTestCases(APITestCase):
     Invite testcases for testing invitee list, details and add/remove invitee functionality
     """
     INVITE_URL = reverse('members-list')
-    # ACCEPT_INVITE_URL = reverse('accept-invite')
-    # MEMBERS_URL = reverse('members')
-    # REMOVE_MEMBER_URL = reverse('remove-invitee')
 
     def setUp(self):
         """
@@ -443,12 +441,20 @@ class InviteTestCases(APITestCase):
         """
         self.user = G(get_user_model())
         token = G(user_models.Token, user=self.user)
-        self.group = G(group_models.Group, created_by=self.user, name="Dummy Group")
+        self.group1 = G(group_models.Group, created_by=self.user, name="Dummy Group")
+        self.group2 = G(group_models.Group, created_by=self.user, name="Dummy Group 2")
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user, title="Dummy Pokerboard")
-        self.invite_user = G(pokerboard_models.Invite, type=pokerboard_models.Invite.EMAIL, invitee=self.user.email,
-                            pokerboard=self.pokerboard.id, role=pokerboard_models.Invite.CONTRIBUTOR)
-        self.invite_group = G(pokerboard_models.Invite, type=pokerboard_models.Invite.GROUP, group=self.group, group_name=self.group.name,
-                            pokerboard=self.pokerboard.id, role=pokerboard_models.Invite.CONTRIBUTOR)
+        self.invite_user = G(
+                             pokerboard_models.Invite, type=pokerboard_models.Invite.EMAIL,
+                             invitee=self.user.email, pokerboard=self.pokerboard.id, 
+                             role=pokerboard_models.Invite.CONTRIBUTOR
+                            )
+        self.invite_group = G(
+                              pokerboard_models.Invite, type=pokerboard_models.Invite.GROUP,
+                              group=self.group1, group_name=self.group1.name,
+                              pokerboard=self.pokerboard.id, 
+                              role=pokerboard_models.Invite.CONTRIBUTOR
+                            )
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
     def test_invite_user(self):
@@ -478,20 +484,18 @@ class InviteTestCases(APITestCase):
         """
         data = {
             "type": pokerboard_models.Invite.GROUP,
+            "group": self.group2,
+            "group_name": self.group2.name,
             "pokerboard": self.pokerboard.id,
-            "group_name": "Dummy Group 2",
             "role": pokerboard_models.Invite.CONTRIBUTOR
         }
-        import pdb
-        pdb.set_trace()
         response = self.client.post(self.INVITE_URL, data=data)
         invite = pokerboard_models.Invite.objects.filter(pokerboard=data["pokerboard"], group_name=data["group_name"]).first()
-        print(invite)
         expected_data = {
-            "invitee": invite.invitee,
+            "invitee": None,
             "pokerboard": invite.pokerboard.id,
             "role": invite.role,
-            "group": 1,
+            "group": invite.group.id,
             "group_name": invite.group_name
         }
         self.assertEqual(response.status_code, 201)
@@ -522,8 +526,9 @@ class InviteTestCases(APITestCase):
         """
         data = {
             "type": pokerboard_models.Invite.GROUP,
+            "group": self.group1.id,
+            "group_name": self.group1.name,
             "pokerboard": self.pokerboard.id,
-            "group_name": self.invite_group.group.name,
             "role": pokerboard_models.Invite.CONTRIBUTOR
         }
         response = self.client.post(self.INVITE_URL, data=data)
@@ -541,8 +546,9 @@ class InviteTestCases(APITestCase):
         """
         data = {
             "type": pokerboard_models.Invite.GROUP,
-            "pokerboard": self.pokerboard.id,
+            "group": 3,
             "group_name": "Some unknown group",
+            "pokerboard": self.pokerboard.id,
             "role": pokerboard_models.Invite.CONTRIBUTOR
         }
         response = self.client.post(self.INVITE_URL, data=data)
@@ -554,33 +560,14 @@ class InviteTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(response.data, expected_data)
 
-    def test_invite_user_failure_empty_invitee(self):
-        """
-        Expects 400 response code on empty invitee name
-        """
-        data = {
-            "type": pokerboard_models.Invite.EMAIL,
-            "invitee": "",
-            "pokerboard": self.pokerboard.id,
-            "role": pokerboard_models.Invite.CONTRIBUTOR
-        }
-        expected_data = {
-            "invitee": [
-                "This field may not be blank."
-            ]
-        }
-        response = self.client.post(self.INVITE_URL, data=data)
-        self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(response.data, expected_data)
-
     def test_invite_user_failure_incorrect_invitee(self):
         """
         Expects 400 response code on incorrect invitee email address
         """
         data = {
+            "type": pokerboard_models.Invite.EMAIL,
             "invitee": "test",
-            "group_name": None,
-            "pokerboard": self.pokerboard,
+            "pokerboard": self.pokerboard.id,
             "role": pokerboard_models.Invite.CONTRIBUTOR
         }
         expected_data = {
@@ -592,33 +579,14 @@ class InviteTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(response.data, expected_data)
     
-    def test_invite_group_failure_empty_group_name(self):
-        """
-        Expects 400 response code on empty group name
-        """
-        data = {
-            "invitee": None,
-            "pokerboard": self.pokerboard,
-            "group_name": "",
-            "role": pokerboard_models.Invite.CONTRIBUTOR
-        }
-        expected_data = {
-            "group_name": [
-                "This field may not be blank."
-            ]
-        }
-        response = self.client.post(self.INVITE_URL, data=data)
-        self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(response.data, expected_data)
-
     def test_invalid_role(self):
         """
         Expects 400 response code on invalid role
         """
         data = {
+            "type": pokerboard_models.Invite.EMAIL,
             "invitee": "test@gmail.com",
-            "pokerboard": self.pokerboard,
-            "group_name": None,
+            "pokerboard": self.pokerboard.id,
             "role": 3
         }
         expected_data = {
@@ -626,25 +594,30 @@ class InviteTestCases(APITestCase):
                 "\"3\" is not a valid choice."
             ]
         }
-        response = self.client.post(self.GROUP_URL, data=data)
+        response = self.client.post(self.INVITE_URL, data=data)
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(response.data, expected_data)
 
     def test_accept_invite(self):
-        pass
+        """
+        Expects 200 response code when requested by correct user
+        """
+        response = self.client.put(reverse('members-detail', args=[self.invite_user.id]))
+        self.assertEqual(response.status_code, 200)
 
     def test_get_members(self):
         """
         Get members of a pokerboard who have accepted invitation
         """
-        response = self.client.get(self.MEMBERS_URL, self.pokerboard.id)
+        self.invite_user.is_accepted = True
+        self.invite_user.save()
+        response = self.client.get(reverse('members-detail', args=[self.pokerboard.id]))
         expected_member = pokerboard_models.Invite.objects.get(pokerboard=self.pokerboard, is_accepted=True)
-
         expected_data = [
             {
                 "id": expected_member.id,
                 "invitee": expected_member.invitee,
-                "pokerboard": expected_member.pokerboard,
+                "pokerboard": expected_member.pokerboard.id,
                 "group": expected_member.group,
                 "role": expected_member.role,
                 "is_accepted": expected_member.is_accepted,
@@ -655,7 +628,11 @@ class InviteTestCases(APITestCase):
         self.assertListEqual(expected_data, response.data)
 
     def test_remove_member(self):
-        pass
+        """
+        Expects 200 response code when member is deleted
+        """
+        response = self.client.delete(reverse('members-detail', args=[self.invite_user.id]))
+        self.assertEqual(response.status_code, 200)
 
 
 class SessionTestCases(APITestCase):
@@ -781,7 +758,7 @@ class TestWebsocket:
         self.user = G(get_user_model())
         self.token = user_models.Token.objects.create(user=self.user)
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user)
-        self.ticket = G(pokerboard_models.Ticket, pokerboard=self.pokerboard, estimate=6)
+        self.ticket = G(pokerboard_models.Ticket, pokerboard=self.pokerboard, estimate=None)
         self.session = G(pokerboard_models.GameSession, ticket=self.ticket, status=pokerboard_models.GameSession.IN_PROGRESS)
     
     async def test_websocket_connect(self, setup):
@@ -947,4 +924,6 @@ class TestWebsocket:
         await communicator.send_json_to({"message_type": "estimate", "message": {"estimate": 6}})
         res = json.loads(await communicator.receive_from())
         expected_data = {"error": "Only manager can finalize estimate"}
+        assert res == expected_data
 
+        
