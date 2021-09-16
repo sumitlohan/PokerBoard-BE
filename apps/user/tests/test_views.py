@@ -133,25 +133,6 @@ class PokerboardTestCases(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertDictEqual(expected_data, response.data)
 
-    def test_create_user_with_invalid_password(self: APITestCase) -> None:
-        """
-        Test create user with invalid password
-        """
-        data = {
-            "first_name": "Siddhant",
-            "last_name": "Gupta",
-            "email": "siddhant.gupta@joshtechnologygroup.com",
-            "password": "123456"
-        }
-        expected_data = {
-            "password": [
-                "Password must be of minimum 8 characters, at least one uppercase letter, lowercase letter, number and special character"
-            ]
-        }
-        response = self.client.post(self.REGISTER_URL, data=data)
-        self.assertEqual(response.status_code, 400)
-        self.assertDictEqual(expected_data, response.data)
-
     def test_update_user_first_name(self: APITestCase) -> None:
         """
         Test update user first name
