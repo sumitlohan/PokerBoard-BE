@@ -65,7 +65,7 @@ class GameSession(user_models.CustomBase):
         (ESTIMATED, "Estimated"),
     )
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="estimations")
-    status = models.IntegerField(default=IN_PROGRESS, choices=STATUS_CHOICES)
+    status = models.PositiveIntegerField(default=IN_PROGRESS, choices=STATUS_CHOICES)
     timer_started_at = models.DateTimeField(null=True)
 
     def __str__(self) -> str:
@@ -78,7 +78,7 @@ class Vote(user_models.CustomBase):
     """
     game_session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name="votes")
     user = models.ForeignKey(user_models.User, on_delete=models.CASCADE, related_name="estimations")
-    estimate = models.IntegerField()
+    estimate = models.PositiveIntegerField()
 
     class Meta:
         unique_together = ('user', 'game_session')

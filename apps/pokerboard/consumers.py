@@ -1,5 +1,5 @@
-from datetime import datetime
 import json
+from datetime import datetime
 
 from django.contrib.auth.models import AnonymousUser
 
@@ -16,6 +16,9 @@ from apps.user import serializers as user_serializers
 
 
 class SessionConsumer(AsyncWebsocketConsumer):
+    """
+    Session consumer for handling websocket connections
+    """
     async def connect(self):
         """
         Runs on connection initiate
@@ -87,7 +90,6 @@ class SessionConsumer(AsyncWebsocketConsumer):
                     "error": "Only manager can finalize estimate"
                 }))
         except serializers.ValidationError as e:
-            print(e)
             await self.send(text_data=json.dumps({
                 "error": "Estimation failed"
             }))

@@ -639,7 +639,7 @@ class SessionTestCases(APITestCase):
     """
     Group testcases for testing group list, details and add member functionality
     """
-    CREATE_SESSION_URL = reverse('create-game-session')
+    CREATE_SESSION_URL = reverse('game-session-list')
     GET_VOTES = reverse('votes')
 
     def setUp(self: APITestCase) -> None:
@@ -700,7 +700,7 @@ class SessionTestCases(APITestCase):
             "status": None,
             "timer_started_at": None
         }
-        response = self.client.get(reverse("active-game-session", args=[self.pokerboard.id]))
+        response = self.client.get(reverse("game-session-detail", args=[self.pokerboard.id]))
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(expected_data, response.data)
 
@@ -720,7 +720,7 @@ class SessionTestCases(APITestCase):
             "status": pokerboard_models.GameSession.IN_PROGRESS,
             "timer_started_at": session.timer_started_at
         }
-        response = self.client.get(reverse("active-game-session", args=[self.pokerboard.id]))
+        response = self.client.get(reverse("game-session-detail", args=[self.pokerboard.id]))
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(expected_data, response.data)
 

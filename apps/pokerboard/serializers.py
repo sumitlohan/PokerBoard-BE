@@ -13,7 +13,6 @@ from apps.pokerboard import (
 from apps.user import serializers as user_serializers
 
 
-
 class TicketSerializer(serializers.ModelSerializer):
     """
     Ticket serializer for displaying ticket details
@@ -127,16 +126,13 @@ class VoteSerializer(serializers.ModelSerializer):
         """
         Place/update a vote
         """
-        vote, created = pokerboard_models.Vote.objects.get_or_create(
+        vote, created = pokerboard_models.Vote.objects.update_or_create(
             user_id=validated_data['user'].id, 
             game_session_id=validated_data['game_session'].id,
             defaults={
                 "estimate": validated_data['estimate']
             }
         )
-        if not created:
-            vote.estimate = validated_data["estimate"]
-            vote.save(update_fields=["estimate"])
         return vote
 
 class GameSessionSerializer(serializers.ModelSerializer):
@@ -189,6 +185,9 @@ class MessageSerializer(serializers.Serializer):
 
 
 class PokerboardMemberSerializer(serializers.ModelSerializer):
+    """
+    Pokerboard members serializer
+    """
     class Meta:
         model = pokerboard_models.Invite
         fields = ['id', 'type', 'invitee', 'pokerboard', 'group', 'role', 'is_accepted', 'group_name']

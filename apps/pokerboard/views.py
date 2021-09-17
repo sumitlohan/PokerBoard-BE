@@ -1,17 +1,19 @@
 import json
 from typing import Any
 from typing_extensions import OrderedDict
+from django.db.models.fields import mixins
 
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 
 from rest_framework import status
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
 from apps.pokerboard import (
     constants as pokerboard_constants,
@@ -127,7 +129,7 @@ class TicketOrderApiView(UpdateAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class GameSessionApi(CreateAPIView, RetrieveAPIView):
+class GameSessionApi(GenericViewSet, CreateModelMixin, RetrieveModelMixin):
     """
     Game session API for creating game and fetching active game session
     """

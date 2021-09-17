@@ -6,6 +6,9 @@ from apps.user.models import Token
 
 
 def get_user(token_key):
+    """
+    Gets user from a token_key
+    """
     try:
         token = Token.objects.get(key=token_key)
         return token.user
@@ -13,12 +16,15 @@ def get_user(token_key):
         return AnonymousUser()
 
 class TokenAuthMiddleware(BaseMiddleware):
+    """
+    TokenAuthMiddleware to add user object to scope in websockets
+    """
     def __init__(self, inner):
         super().__init__(inner)
 
     async def __call__(self, scope, receive, send):
         try:
-            token_key = (dict((x.split('=') for x in scope['query_string'].decode().split("&")))).get('token', None)
+            token_key = (dict((query.split('=') for query in scope['query_string'].decode().split("&")))).get('token', None)
         except ValueError:
             token_key = None
         scope['user'] = AnonymousUser() if token_key is None else get_user(token_key)

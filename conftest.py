@@ -1,5 +1,5 @@
 import os
-import sys
+
 import class_settings
 
 def set_settings():
