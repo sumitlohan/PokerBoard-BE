@@ -253,7 +253,7 @@ class TicketOrderTestCases(APITestCase):
         Setup method for creating default user and it's token
         """
         self.user = G(get_user_model())
-        token = G(user_models.Torootken, user=self.user)
+        token = G(user_models.Token, user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
         self.pokerboard = G(pokerboard_models.Pokerboard, manager=self.user)
         self.tickets = [

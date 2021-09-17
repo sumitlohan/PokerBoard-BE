@@ -3,6 +3,7 @@ from typing import Any
 from typing_extensions import OrderedDict
 
 from django.db.models.query import QuerySet
+from django.db.models.query_utils import Q
 
 from rest_framework import status
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveAPIView, UpdateAPIView
@@ -41,12 +42,9 @@ class PokerboardApiView(ModelViewSet):
         Get pokerboards a user can access
         """
         queryset = pokerboard_models.Pokerboard.objects.filter(
-            manager=self.request.user
+            Q(manager=self.request.user) | Q(invite__invitee=self.request.user, invite__is_accepted=True)
         ).prefetch_related("tickets")
-        invites = pokerboard_models.Pokerboard.objects.filter(
-            invite__invitee=self.request.user, invite__is_accepted=True
-        )
-        return (queryset.union(invites).distinct())
+        return queryset
 
 
 class JqlAPIView(RetrieveAPIView):
