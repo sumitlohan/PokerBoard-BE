@@ -1,7 +1,6 @@
 import json
 from typing import Any
 from typing_extensions import OrderedDict
-from django.db.models.fields import mixins
 
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
