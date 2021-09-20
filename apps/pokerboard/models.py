@@ -77,7 +77,7 @@ class Vote(user_models.CustomBase):
     Vote model for storing vote details for each user
     """
     game_session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name="votes")
-    user = models.ForeignKey(user_models.User, on_delete=models.CASCADE, related_name="estimations")
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="estimations")
     estimate = models.PositiveIntegerField()
 
     class Meta:

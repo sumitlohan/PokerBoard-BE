@@ -135,6 +135,7 @@ class VoteSerializer(serializers.ModelSerializer):
         )
         return vote
 
+
 class GameSessionSerializer(serializers.ModelSerializer):
     """
     Gamesession serializer
@@ -166,14 +167,6 @@ class GameSessionSerializer(serializers.ModelSerializer):
         if active_sessions:
             raise serializers.ValidationError("An active game session already exists for this pokerboard")
         return attrs
-
-    def create(self: serializers.ModelSerializer, validated_data: OrderedDict) -> Any:
-        """
-        Creates a game session
-        """
-        validated_data["status"] = pokerboard_models.GameSession.IN_PROGRESS
-        validated_data["timer_started_at"] = None
-        return super().create(validated_data)
 
 
 class MessageSerializer(serializers.Serializer):

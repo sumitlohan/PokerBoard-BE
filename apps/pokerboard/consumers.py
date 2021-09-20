@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from django.contrib.auth.models import AnonymousUser
+from django.db.models.query_utils import Q
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 from rest_framework import serializers
@@ -24,8 +25,8 @@ class SessionConsumer(AsyncWebsocketConsumer):
         Runs on connection initiate
         """
         session_id = self.scope['url_route']['kwargs']['pk']
-        self.room_name = str(session_id)
-        self.room_group_name = f"session_{self.room_name}"
+        room_name = str(session_id)
+        self.room_group_name = f"session_{room_name}"
         self.session = pokerboard_models.GameSession.objects.filter(id=session_id).first()
         if not self.session:
             await self.close()
@@ -39,7 +40,15 @@ class SessionConsumer(AsyncWebsocketConsumer):
         if type(self.scope["user"]) == AnonymousUser or self.session.status != pokerboard_models.GameSession.IN_PROGRESS:
             await self.close()
             return
+  
+        pokerboards = pokerboard_models.Pokerboard.objects.filter(
+            Q(manager=self.scope["user"]) | Q(invite__invitee=self.scope["user"], invite__is_accepted=True)
+        )
 
+        print(pokerboards)
+        if self.session.ticket.pokerboard not in pokerboards:
+            await self.close()
+            return
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.append(self.scope["user"])
         setattr(self.channel_layer, self.room_group_name, clients)
@@ -164,12 +173,12 @@ class SessionConsumer(AsyncWebsocketConsumer):
                 "error": "Can't start timer"
             }))
 
-    def myconverter(self, o):
+    def myconverter(self, obj):
         """
         convert datetime into json
         """
-        if isinstance(o, datetime):
-            return o.__str__()
+        if isinstance(obj, datetime):
+            return obj.__str__()
 
     async def receive(self, text_data):
         """

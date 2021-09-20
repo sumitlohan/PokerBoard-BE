@@ -158,7 +158,10 @@ class VoteApiView(ListAPIView):
         return tickets
 
 
-class PokerboardMembersApi(ModelViewSet):
+class PokerboardMembersApiView(ModelViewSet):
+    """
+    Pokerboard member API View for inviting/removing user/groups
+    """
     serializer_class = pokerboard_serializers.InviteUserSerializer
     pokerboard_member_serializer = pokerboard_serializers.PokerboardMemberSerializer
     queryset = pokerboard_models.Invite.objects.all()

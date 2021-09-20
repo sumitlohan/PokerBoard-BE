@@ -1,5 +1,6 @@
 import json
 import requests
+from typing import Any
 
 from rest_framework.serializers import ValidationError
 
@@ -15,7 +16,7 @@ class JiraApi:
     """
 
     @staticmethod
-    def query_jira(method, url, payload=None, status_code=200):
+    def query_jira(method: str, url: str, payload: Any=None, status_code: int=200):
         """
         Perform a request and returns response
         """
@@ -32,7 +33,7 @@ class JiraApi:
         return json.loads(response.text)
 
     @staticmethod
-    def get_sprints(boardId):
+    def get_sprints(boardId: int) -> list:
         """
         Get sprints for a given board
         """
@@ -40,7 +41,7 @@ class JiraApi:
         return sprint_res["values"]
 
     @staticmethod
-    def get_boards():
+    def get_boards() -> list:
         """
         Get all available boards
         """
@@ -49,7 +50,7 @@ class JiraApi:
         return boards_res["values"]
 
     @staticmethod
-    def get_all_sprints():
+    def get_all_sprints() -> list:
         """
         Fetches all sprints from all available boards
         """
@@ -59,7 +60,8 @@ class JiraApi:
             sprints = sprints + JiraApi.get_sprints(board["id"])
         return sprints
 
-def validate_vote(deck_type, estimate):
+
+def validate_vote(deck_type: int, estimate: int) -> None:
     """
     Validates a vote based on deck type
     """
@@ -73,7 +75,8 @@ def validate_vote(deck_type, estimate):
         if estimate not in pokerboard_constants.FIBONACCI_OPTIONS:
             raise ValidationError("Invalid estimate")
 
-def move_ticket_to_end(ticket):
+
+def move_ticket_to_end(ticket: pokerboard_models.Ticket) -> None:
     """
     move a ticket to the end of the list
     """

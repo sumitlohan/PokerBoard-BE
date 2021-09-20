@@ -800,6 +800,7 @@ class TestWebsocket:
         """
         user_2 = G(get_user_model())
         token = G(user_models.Token, user=user_2)
+        G(pokerboard_models.Invite, invitee=user_2.email, pokerboard=self.pokerboard, is_accepted=True, role=pokerboard_models.Invite.CONTRIBUTOR)
         communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={token.key}")
         connected, subprotocol = await communicator.connect()
 
@@ -855,6 +856,7 @@ class TestWebsocket:
         """
         user_2 = G(get_user_model())
         token = G(user_models.Token, user=user_2)
+        G(pokerboard_models.Invite, invitee=user_2.email, pokerboard=self.pokerboard, is_accepted=True, role=pokerboard_models.Invite.CONTRIBUTOR)
         communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={token.key}")
         connected, subprotocol = await communicator.connect()
         assert connected
@@ -914,6 +916,7 @@ class TestWebsocket:
         """
         user_2 = G(get_user_model())
         token = G(user_models.Token, user=user_2)
+        G(pokerboard_models.Invite, invitee=user_2.email, pokerboard=self.pokerboard, is_accepted=True, role=pokerboard_models.Invite.CONTRIBUTOR)
         communicator = WebsocketCommunicator(application, f"/session/{self.session.id}?token={token.key}")
         connected, subprotocol = await communicator.connect()
         assert connected
