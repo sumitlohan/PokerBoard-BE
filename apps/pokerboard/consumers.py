@@ -102,7 +102,7 @@ class SessionConsumer(AsyncWebsocketConsumer):
         if self.scope["user"] == manager and self.session.status == pokerboard_models.GameSession.IN_PROGRESS:
             self.session.status = pokerboard_models.GameSession.SKIPPED
             self.session.save()
-            pokerboard_utils.moveTicketToEnd(self.session.ticket)
+            pokerboard_utils.move_ticket_to_end(self.session.ticket)
             return {
                 "type": event["type"],
             }

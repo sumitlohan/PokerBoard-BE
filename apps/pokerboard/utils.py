@@ -73,17 +73,17 @@ def validate_vote(deck_type, estimate):
         if estimate not in pokerboard_constants.FIBONACCI_OPTIONS:
             raise ValidationError("Invalid estimate")
 
-def moveTicketToEnd(ticket):
+def move_ticket_to_end(ticket):
     """
     move a ticket to the end of the list
     """
     # costs 2 db hits
     all_tickets = ticket.pokerboard.tickets.filter(rank__gte=ticket.rank, estimate=None).order_by('rank')
-    prevRank = ticket.rank
+    prev_rank = ticket.rank
     for _ticket in all_tickets:
-        if _ticket.rank == prevRank:
+        if _ticket.rank == prev_rank:
             continue
-        _ticket.rank, prevRank = prevRank, _ticket.rank
+        _ticket.rank, prev_rank = prev_rank, _ticket.rank
     
-    all_tickets.first().rank = prevRank
+    all_tickets.first().rank = prev_rank
     pokerboard_models.Ticket.objects.bulk_update(all_tickets, ['rank'])
