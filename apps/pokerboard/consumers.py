@@ -32,11 +32,6 @@ class SessionConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
         if type(self.scope["user"]) == AnonymousUser or self.session.status != pokerboard_models.GameSession.IN_PROGRESS:
             await self.close()
             return
@@ -45,10 +40,15 @@ class SessionConsumer(AsyncWebsocketConsumer):
             Q(manager=self.scope["user"]) | Q(invite__invitee=self.scope["user"], invite__is_accepted=True)
         )
 
-        print(pokerboards)
-        if self.session.ticket.pokerboard not in pokerboards:
+        if not pokerboards.filter(id=self.session.ticket.pokerboard.id).exists():
             await self.close()
             return
+        
+        # Join room group
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
         clients = getattr(self.channel_layer, self.room_group_name, [])
         clients.append(self.scope["user"])
         setattr(self.channel_layer, self.room_group_name, clients)

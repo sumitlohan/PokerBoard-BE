@@ -13,11 +13,11 @@ def set_settings():
     else:
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poker.settings.base")
     os.environ.setdefault('DJANGO_SETTINGS_CLASS', 'Setting')
+    class_settings.setup()
 
 
 if __name__ == "__main__":
     set_settings()
-    class_settings.setup()
     try:
         from django.core.management import execute_from_command_line
     except ImportError:
